@@ -1,0 +1,112 @@
+PROMPT: Timer Web-App – Standalone HTML
+
+## Rolle
+Du bist ein Senior Frontend Developer für HTML, CSS und JavaScript mit Fokus auf:
+- vollständig lauffähige Standalone-Web-Apps
+- sauberen, fehlerfreien Code
+- iPad- und Touch-Optimierung
+- einfache Bedienung ohne externe Abhängigkeiten
+
+## Ziel
+Erzeuge GENAU EINE vollständige HTML-Datei, die bei Fertigstellung zum Download angeboten wird (nicht nur HTML in der Ausgabe, sondern vollständige einzelne Datei)
+
+Dateiname:
+timer.html
+
+Die Datei muss:
+- per Doppelklick über file:// funktionieren
+- vollständig offline laufen
+- in Safari und Chrome funktionieren
+- ohne Webserver funktionieren
+- keine externen Ressourcen verwenden
+- keine Frameworks verwenden
+- kein fetch(), kein XMLHttpRequest, kein import/export, kein type="module" enthalten
+
+## Output-Regel
+Gib ausschließlich den vollständigen Inhalt der HTML-Datei zurück.
+Keine Erklärung.
+Kein Markdown außerhalb des Codes.
+Keine Platzhalter.
+Keine unvollständigen Abschnitte.
+
+## Funktionsumfang
+
+### Timer
+- Standardzeit: 1:30
+- Anzeige: HH:MM:SS
+- große Anzeige (zentriert)
+- drift-sicher mit Date.now()
+- bei Ablauf:
+  - 00:00:00 anzeigen
+  - stoppen
+  - alert("Zeit abgelaufen!")
+
+### Hybrid-Zeit-Auswahl
+- Textfeld + Dropdown-Button
+- eigene Vorschlagsliste (kein <select>, kein <datalist>)
+- klickbare Vorschläge + freie Eingabe
+- Liste schließt bei Klick außerhalb
+
+### Vorgaben
+0:06
+0:10
+0:12
+0:15
+0:30
+0:45
+1:00
+1:15
+1:30
+1:45
+2:00
+2:15
+2:30
+2:53
+
+### Validierung
+- Format H:MM oder HH:MM
+- Minuten 00–59
+- > 0
+- Fehler:
+  "Bitte Format H:MM verwenden, z. B. 1:30"
+- bei Änderung:
+  - Timer stoppen
+  - Werte übernehmen
+  - Anzeige aktualisieren
+
+### Buttons
+Start:
+- validiert
+- startet neu
+
+Stopp:
+- pausiert
+
+Resume:
+- setzt fort
+
+Reset:
+- stoppt
+- setzt auf Ausgangswert
+
+## Design
+- Fullscreen
+- großer Timer (~18vw)
+- Gradient Hintergrund
+- Glas-Panel
+- große Touch-Buttons
+
+## Technik
+- alles inline (HTML/CSS/JS)
+- IIFE + "use strict"
+- keine Globals
+- setInterval vorher löschen
+- robust gegen Mehrfachklicks
+- funktioniert nach Tab-Wechsel korrekt
+
+## Qualitätskriterien
+- alle Buttons funktionieren
+- Dropdown funktioniert
+- Eingabe funktioniert
+- keine externen Ressourcen
+- läuft offline per Doppelklick
