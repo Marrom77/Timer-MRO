@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Timer</title>
+  <style>
+    :root {
+      --panel-bg: rgba(255, 255, 255, 0.14);
+      --panel-border: rgba(255, 255, 255, 0.24);
+      --text: #ffffff;
+      --muted: rgba(255, 255, 255, 0.74);
+      --shadow: rgba(0, 0, 0, 0.28);
+      --button-bg: rgba(255, 255, 255, 0.18);
+      --button-bg-hover: rgba(255, 255, 255, 0.28);
+      --button-bg-active: rgba(255, 255, 255, 0.36);
+      --danger: rgba(255, 76, 76, 0.34);
+      --ok: rgba(78, 220, 140, 0.32);
+      --blue: rgba(80, 165, 255, 0.32);
+      --yellow: rgba(255, 205, 80, 0.32);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.22), transparent 26%),
+        radial-gradient(circle at 84% 18%, rgba(86, 191, 255, 0.32), transparent 30%),
+        radial-gradient(circle at 78% 82%, rgba(255, 118, 196, 0.30), transparent 32%),
+        linear-gradient(135deg, #14213d 0%, #2b1055 45%, #0f2027 100%);
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      user-select: none;
+    }
+
+    .app {
+      width: min(1120px, 94vw);
+      min-height: min(760px, 88dvh);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(18px, 3vh, 32px);
+      padding: clamp(22px, 4vw, 48px);
+      border: 1px solid var(--panel-border);
+      border-radius: clamp(24px, 4vw, 42px);
+      background: var(--panel-bg);
+      box-shadow: 0 28px 90px var(--shadow);
+      backdrop-filter: blur(22px) saturate(135%);
+      -webkit-backdrop-filter: blur(22px) saturate(135%);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 3.5vw, 44px);
+      font-weight: 750;
+      letter-spacing: 0.02em;
+      text-shadow: 0 3px 18px rgba(0, 0, 0, 0.22);
+    }
+
+    .timer-display {
+      width: 100%;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      font-size: clamp(62px, 18vw, 228px);
+      line-height: 0.95;
+      font-weight: 800;
+      letter-spacing: -0.07em;
+      text-shadow: 0 12px 44px rgba(0, 0, 0, 0.30);
+    }
+
+    .time-control {
+      position: relative;
+      width: min(430px, 92vw);
+      display: flex;
+      align-items: stretch;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 14px 38px rgba(0, 0, 0, 0.16);
+    }
+
+    .time-control input {
+      width: 100%;
+      min-width: 0;
+      appearance: none;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      background: transparent;
+      padding: 17px 18px;
+      font-size: clamp(22px, 4vw, 34px);
+      line-height: 1;
+      text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .time-control input::placeholder {
+      color: rgba(255, 255, 255, 0.52);
+    }
+
+    .dropdown-toggle {
+      flex: 0 0 64px;
+      appearance: none;
+      border: 0;
+      border-left: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 0 18px 18px 0;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 26px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .dropdown-toggle:active {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .suggestions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 10px);
+      z-index: 20;
+      display: none;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      max-height: min(350px, 43vh);
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 20px;
+      background: rgba(22, 26, 46, 0.92);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+      backdrop-filter: blur(22px) saturate(145%);
+      -webkit-backdrop-filter: blur(22px) saturate(145%);
+    }
+
+    .suggestions.open {
+      display: grid;
+    }
+
+    .suggestion {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.12);
+      padding: 13px 10px;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .suggestion:active,
+    .suggestion:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .error {
+      min-height: 24px;
+      color: #ffd9d9;
+      font-size: clamp(15px, 2.2vw, 19px);
+      text-align: center;
+      font-weight: 650;
+      text-shadow: 0 2px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: clamp(10px, 2vw, 18px);
+      width: min(780px, 96vw);
+    }
+
+    .control-button {
+      appearance: none;
+      min-width: clamp(126px, 17vw, 170px);
+      min-height: 64px;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 18px;
+      color: var(--text);
+      background: var(--button-bg);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.20);
+      font-size: clamp(19px, 2.7vw, 30px);
+      font-weight: 760;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .control-button:hover {
+      background: var(--button-bg-hover);
+      transform: translateY(-1px);
+    }
+
+    .control-button:active {
+      background: var(--button-bg-active);
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .start { background: var(--ok); }
+    .stop { background: var(--danger); }
+    .resume { background: var(--blue); }
+    .reset { background: var(--yellow); }
+
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: clamp(14px, 2vw, 18px);
+      text-align: center;
+    }
+
+    @media (max-width: 680px) {
+      body { overflow: auto; }
+      .app { min-height: 92dvh; }
+      .timer-display { font-size: clamp(52px, 17vw, 112px); letter-spacing: -0.055em; }
+      .control-button { flex: 1 1 calc(50% - 18px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="Countdown Timer">
+    <h1>Countdown Timer</h1>
+
+    <div id="display" class="timer-display" aria-live="polite">00:01:30</div>
+
+    <div class="time-control" id="timeControl">
+      <input id="timeInput" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="1:30" aria-label="Zeit im Format H:MM">
+      <button id="dropdownToggle" class="dropdown-toggle" type="button" aria-label="Zeitvorschläge anzeigen" aria-expanded="false">▾</button>
+      <div id="suggestions" class="suggestions" role="listbox" aria-label="Zeitvorschläge"></div>
+    </div>
+
+    <div id="error" class="error" aria-live="assertive"></div>
+
+    <section class="buttons" aria-label="Timer Steuerung">
+      <button id="startBtn" class="control-button start" type="button">Start</button>
+      <button id="stopBtn" class="control-button stop" type="button">Stopp</button>
+      <button id="resumeBtn" class="control-button resume" type="button">Resume</button>
+      <button id="resetBtn" class="control-button reset" type="button">Reset</button>
+    </section>
+
+    <div id="status" class="status">Bereit</div>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var presets = ["0:06", "0:10", "0:12", "0:15", "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00", "2:15", "2:30", "2:53"];
+      var display = document.getElementById("display");
+      var timeInput = document.getElementById("timeInput");
+      var dropdownToggle = document.getElementById("dropdownToggle");
+      var suggestions = document.getElementById("suggestions");
+      var errorBox = document.getElementById("error");
+      var statusBox = document.getElementById("status");
+      var startBtn = document.getElementById("startBtn");
+      var stopBtn = document.getElementById("stopBtn");
+      var resumeBtn = document.getElementById("resumeBtn");
+      var resetBtn = document.getElementById("resetBtn");
+      var timeControl = document.getElementById("timeControl");
+
+      var intervalId = null;
+      var durationMs = 90000;
+      var remainingMs = durationMs;
+      var endTimeMs = 0;
+      var running = false;
+      var expiredAlertShown = false;
+
+      function pad2(value) {
+        return String(value).padStart(2, "0");
+      }
+
+      function formatTime(ms) {
+        var totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+        var hours = Math.floor(totalSeconds / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = totalSeconds % 60;
+        return pad2(hours) + ":" + pad2(minutes) + ":" + pad2(seconds);
+      }
+
+      function render() {
+        display.textContent = formatTime(remainingMs);
+      }
+
+      function setError(message) {
+        errorBox.textContent = message || "";
+      }
+
+      function setStatus(message) {
+        statusBox.textContent = message || "";
+      }
+
+      function parseInput(value) {
+        var trimmed = String(value || "").trim();
+        var match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
+        if (!match) {
+          return null;
+        }
+
+        var hours = Number(match[1]);
+        var minutes = Number(match[2]);
+        if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes < 0 || minutes > 59) {
+          return null;
+        }
+
+        var totalMs = ((hours * 60) + minutes) * 60 * 1000;
+        if (totalMs <= 0) {
+          return null;
+        }
+
+        return totalMs;
+      }
+
+      function clearTimerInterval() {
+        if (intervalId !== null) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
+
+      function stopTimerOnly() {
+        clearTimerInterval();
+        running = false;
+      }
+
+      function validateAndApplyInput() {
+        var parsed = parseInput(timeInput.value);
+        if (parsed === null) {
+          setError("Bitte Format H:MM verwenden, z. B. 1:30");
+          return false;
+        }
+
+        setError("");
+        durationMs = parsed;
+        remainingMs = parsed;
+        expiredAlertShown = false;
+        render();
+        return true;
+      }
+
+      function handleInputChange() {
+        stopTimerOnly();
+        if (validateAndApplyInput()) {
+          setStatus("Zeit übernommen");
+        } else {
+          setStatus("Eingabe prüfen");
+        }
+      }
+
+      function tick() {
+        if (!running) {
+          return;
+        }
+
+        remainingMs = Math.max(0, endTimeMs - Date.now());
+        render();
+
+        if (remainingMs <= 0) {
+          stopTimerOnly();
+          remainingMs = 0;
+          render();
+          setStatus("Abgelaufen");
+          if (!expiredAlertShown) {
+            expiredAlertShown = true;
+            window.alert("Zeit abgelaufen!");
+          }
+        }
+      }
+
+      function startFresh() {
+        stopTimerOnly();
+        if (!validateAndApplyInput()) {
+          setStatus("Start nicht möglich");
+          return;
+        }
+
+        running = true;
+        expiredAlertShown = false;
+        endTimeMs = Date.now() + durationMs;
+        setStatus("Läuft");
+        tick();
+        clearTimerInterval();
+        intervalId = setInterval(tick, 200);
+      }
+
+      function pauseTimer() {
+        if (!running) {
+          setStatus("Pausiert");
+          return;
+        }
+
+        remainingMs = Math.max(0, endTimeMs - Date.now());
+        stopTimerOnly();
+        render();
+        setStatus("Pausiert");
+      }
+
+      function resumeTimer() {
+        if (running) {
+          return;
+        }
+
+        if (remainingMs <= 0) {
+          setStatus("Nichts fortzusetzen");
+          return;
+        }
+
+        setError("");
+        running = true;
+        expiredAlertShown = false;
+        endTimeMs = Date.now() + remainingMs;
+        setStatus("Läuft weiter");
+        tick();
+        clearTimerInterval();
+        intervalId = setInterval(tick, 200);
+      }
+
+      function resetTimer() {
+        stopTimerOnly();
+        var parsed = parseInput(timeInput.value);
+        if (parsed !== null) {
+          durationMs = parsed;
+          remainingMs = parsed;
+          setError("");
+        } else {
+          remainingMs = durationMs;
+          setError("Bitte Format H:MM verwenden, z. B. 1:30");
+        }
+        expiredAlertShown = false;
+        render();
+        setStatus("Zurückgesetzt");
+      }
+
+      function openSuggestions() {
+        suggestions.classList.add("open");
+        dropdownToggle.setAttribute("aria-expanded", "true");
+      }
+
+      function closeSuggestions() {
+        suggestions.classList.remove("open");
+        dropdownToggle.setAttribute("aria-expanded", "false");
+      }
+
+      function toggleSuggestions() {
+        if (suggestions.classList.contains("open")) {
+          closeSuggestions();
+        } else {
+          openSuggestions();
+        }
+      }
+
+      function buildSuggestions() {
+        var fragment = document.createDocumentFragment();
+        presets.forEach(function (value) {
+          var button = document.createElement("button");
+          button.type = "button";
+          button.className = "suggestion";
+          button.textContent = value;
+          button.setAttribute("role", "option");
+          button.addEventListener("click", function () {
+            timeInput.value = value;
+            closeSuggestions();
+            handleInputChange();
+            timeInput.focus();
+          });
+          fragment.appendChild(button);
+        });
+        suggestions.appendChild(fragment);
+      }
+
+      function handleOutsideClick(event) {
+        if (!timeControl.contains(event.target)) {
+          closeSuggestions();
+        }
+      }
+
+      function handleKeydown(event) {
+        if (event.key === "Escape") {
+          closeSuggestions();
+          timeInput.blur();
+        }
+        if (event.key === "Enter" && document.activeElement === timeInput) {
+          handleInputChange();
+          closeSuggestions();
+          timeInput.blur();
+        }
+      }
+
+      buildSuggestions();
+      render();
+
+      dropdownToggle.addEventListener("click", toggleSuggestions);
+      timeInput.addEventListener("focus", openSuggestions);
+      timeInput.addEventListener("change", handleInputChange);
+      timeInput.addEventListener("blur", function () {
+        window.setTimeout(function () {
+          if (!timeControl.contains(document.activeElement)) {
+            handleInputChange();
+          }
+        }, 0);
+      });
+      document.addEventListener("pointerdown", handleOutsideClick);
+      document.addEventListener("keydown", handleKeydown);
+      startBtn.addEventListener("click", startFresh);
+      stopBtn.addEventListener("click", pauseTimer);
+      resumeBtn.addEventListener("click", resumeTimer);
+      resetBtn.addEventListener("click", resetTimer);
+      document.addEventListener("visibilitychange", tick);
+      window.addEventListener("pageshow", tick);
+      window.addEventListener("beforeunload", clearTimerInterval);
+    }());
+  </script>
+</body>
+</html>
