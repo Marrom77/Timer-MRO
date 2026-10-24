@@ -252,6 +252,18 @@
     transition: opacity 0.4s ease;
   }
   .critter .body { width: 100%; height: 100%; }
+  /* Krake: acht Arme wackeln abwechselnd */
+  .octo .arm {
+    -webkit-transform-box: fill-box;
+    transform-box: fill-box;
+    -webkit-transform-origin: 50% 0;
+    transform-origin: 50% 0;
+    -webkit-animation: wiggle 1.6s ease-in-out infinite alternate;
+    animation: wiggle 1.6s ease-in-out infinite alternate;
+  }
+  .octo .arm:nth-child(even) { -webkit-animation-delay: -0.8s; animation-delay: -0.8s; }
+  @-webkit-keyframes wiggle { from { -webkit-transform: rotate(-12deg); } to { -webkit-transform: rotate(12deg); } }
+  @keyframes wiggle { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
   .critter .body svg { display: block; width: 100%; height: 100%; }
   .critter.left .body { -webkit-transform: scaleX(-1); transform: scaleX(-1); }
   .critter .body { -webkit-transition: -webkit-transform 0.35s ease; transition: transform 0.35s ease; }
@@ -440,6 +452,17 @@
   <path d="M58 17 Q68 36 58 55" stroke="#fff" stroke-width="4" fill="none" opacity=".25"/>
   <path d="M74 16 Q82 36 74 56" stroke="#fff" stroke-width="3" fill="none" opacity=".18"/>
   <circle cx="90" cy="30" r="5.5" fill="#fff"/><circle cx="91.5" cy="30" r="2.8" fill="#0b1026"/>
+ </symbol>
+ <!-- entspannter Hai: halb geschlossenes Auge, Lächeln -->
+ <symbol id="sym-shark" viewBox="0 0 220 90">
+  <path d="M40 46 L4 14 L16 46 L6 76Z" fill="#64748b"/>
+  <path d="M96 30 L112 0 L130 30Z" fill="#64748b"/>
+  <path d="M30 46 Q70 18 150 24 Q200 30 214 48 Q196 62 150 66 Q70 72 30 46Z" fill="#94a3b8"/>
+  <path d="M60 52 Q120 74 196 56 Q170 66 150 66 Q90 70 60 52Z" fill="#e2e8f0"/>
+  <path d="M110 58 L128 80 L132 60Z" fill="#64748b"/>
+  <path d="M150 38 v12 M157 37 v12 M164 37 v11" stroke="#64748b" stroke-width="2" opacity=".6"/>
+  <path d="M176 36 q6 -4 12 0" stroke="#0b1026" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M188 52 q8 4 16 -2" stroke="#475569" stroke-width="2.5" fill="none" stroke-linecap="round"/>
  </symbol>
  <symbol id="sym-fish2" viewBox="0 0 100 90">
   <path d="M24 45 L4 30 L8 45 L4 60Z" fill="currentColor" opacity=".75"/>
@@ -990,8 +1013,25 @@
     { sym: "fish", w: 52, h: 30, color: "#a3e635" },
     { sym: "fish2", w: 54, h: 49, color: "#c084fc" },
     { sym: "fish", w: 60, h: 35, color: "#f87171" },
-    { sym: "fish", w: 44, h: 26, color: "#fde68a" }
+    { sym: "fish", w: 44, h: 26, color: "#fde68a" },
+    // entspannter Hai: groß, gleitet langsam und gleichmäßig
+    { sym: "shark", w: 220, h: 90, color: "#94a3b8", min: 22, max: 38, calm: true },
+    // Krake: schwebt langsam, pulsiert auf und ab, Arme wackeln
+    { octo: true, w: 90, h: 104, color: "#f472b6", min: 10, max: 28 }
   ];
+
+  var OCTO_SVG = '<svg class="octo" viewBox="0 0 90 104">' +
+    '<g fill="#db2777">' +
+    [8, 17, 26, 35, 49, 58, 67, 76].map(function (x, k) {
+      return '<path class="arm" d="M' + x + ' 44 q' + (k < 4 ? -6 : 6) + ' 20 0 34 q' + (k < 4 ? 6 : -6) + ' 12 ' + (k < 4 ? -4 : 4) + ' 22" stroke="#db2777" stroke-width="7" stroke-linecap="round" fill="none"/>';
+    }).join("") +
+    '</g>' +
+    '<path d="M6 48 Q4 4 45 4 Q86 4 84 48 Q66 56 45 50 Q24 56 6 48Z" fill="#f472b6"/>' +
+    '<ellipse cx="30" cy="20" rx="8" ry="5" fill="#fff" opacity=".25"/>' +
+    '<circle cx="33" cy="32" r="6" fill="#fff"/><circle cx="34" cy="33" r="3" fill="#0b1026"/>' +
+    '<circle cx="57" cy="32" r="6" fill="#fff"/><circle cx="58" cy="33" r="3" fill="#0b1026"/>' +
+    '<path d="M38 42 q7 5 14 0" stroke="#831843" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+    '</svg>';
 
   var critters = [];
   var aqua = { on: true, last: 0 };
@@ -1002,13 +1042,13 @@
     var el = document.createElement("div");
     el.className = "critter";
     el.style.color = kind.color;
-    el.innerHTML = '<div class="body"><svg viewBox="0 0 ' + kind.w + " " + kind.h + '"><use href="#sym-' + kind.sym + '" xlink:href="#sym-' + kind.sym + '"/></svg></div>';
+    el.innerHTML = '<div class="body">' + (kind.octo ? OCTO_SVG : '<svg viewBox="0 0 ' + kind.w + " " + kind.h + '"><use href="#sym-' + kind.sym + '" xlink:href="#sym-' + kind.sym + '"/></svg>') + "</div>";
     aquariumEl.appendChild(el);
     critters.push({
       kind: kind, el: el,
       x: rand(0, window.innerWidth), dir: Math.random() < 0.5 ? -1 : 1,
       depth: rand(0.05, 0.95), targetDepth: rand(0.05, 0.95),
-      speed: rand(40, 110), base: rand(40, 110),
+      speed: rand(kind.min || 40, kind.max || 110), base: rand(kind.min || 40, kind.max || 110),
       phase: rand(0, 6.28), nextChange: 0
     });
   }
@@ -1048,9 +1088,9 @@
       // ab und zu: neues Tempo, neue Tiefe, manchmal umdrehen
       if (now > c.nextChange) {
         c.nextChange = now + rand(2500, 7000);
-        c.base = rand(35, 120);
-        c.targetDepth = rand(0.05, 0.95);
-        if (Math.random() < 0.25) { c.dir = -c.dir; }
+        c.base = rand(c.kind.min || 35, c.kind.max || 120);
+        c.targetDepth = c.kind.calm ? rand(0.35, 0.75) : rand(0.05, 0.95);
+        if (Math.random() < (c.kind.calm ? 0.08 : 0.25)) { c.dir = -c.dir; }
       }
       c.speed += (c.base - c.speed) * Math.min(1, dt * 1.5);
       c.depth += (c.targetDepth - c.depth) * Math.min(1, dt * 0.4);
@@ -1059,10 +1099,11 @@
       if (c.x < -w * 0.7) { c.dir = 1; }
 
       var top = waterTop + 30, bottom = floor - h;
-      var y = top + Math.max(0, bottom - top) * c.depth + Math.sin(now / 700 + c.phase) * 6 * scale;
-      var tilt = Math.sin(now / 350 + c.phase) * 4;
+      var bob = c.kind.octo ? Math.sin(now / 1100 + c.phase) * 22 : Math.sin(now / 700 + c.phase) * 6;
+      var y = top + Math.max(0, bottom - top) * c.depth + bob * scale;
+      var tilt = c.kind.octo ? Math.sin(now / 1100 + c.phase) * 6 : Math.sin(now / (c.kind.calm ? 900 : 350) + c.phase) * (c.kind.calm ? 1.5 : 4);
 
-      c.el.classList.toggle("left", c.dir < 0);
+      c.el.classList.toggle("left", c.dir < 0 && !c.kind.octo);
       c.el.style.opacity = y > waterTop + 6 ? "1" : "0";
       c.el.style.transform = "translate3d(" + c.x.toFixed(1) + "px," + y.toFixed(1) + "px,0) rotate(" + tilt.toFixed(1) + "deg)";
     }
