@@ -1084,7 +1084,6 @@
   var gate1El = document.getElementById("gate1");
   var gate2El = document.getElementById("gate2");
   var buttonsWrapEl = document.querySelector(".buttons-wrap");
-  var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var KINDS = [
     { sym: "prince", w: 110, h: 74, depth: 0.15, speed: 45, gates: true,
@@ -1176,9 +1175,10 @@
     var floor = H * 0.97;
     // bei niedrigem Pegel werden alle kleiner und rücken zusammen
     if (!done) { scale *= Math.max(0.45, Math.min(1, (floor - waterTop) / (H * 0.35))); }
-    var moving = state.running && !reducedMotion;
+    // Bewohner schwimmen immer; läuft der Timer, sind sie flotter unterwegs
+    var moving = true;
     var urgent = state.running && frac < 0.1;
-    var tempo = urgent ? 2.6 : 1;
+    var tempo = urgent ? 2.6 : state.running ? 1 : 0.6;
 
     // Stage Gates für den PRINCE2-Fisch
     var g1 = W / 3, g2 = W * 2 / 3;
@@ -1257,7 +1257,7 @@
           var top = waterTop + 34, bottom = floor - h - 40;
           y = top + Math.max(0, bottom - top) * k.depth;
         }
-        if (!reducedMotion) { y += Math.sin(now / 900 + c.phase) * (k.sym === "jelly" ? 14 : 5) * scale; }
+        { y += Math.sin(now / 900 + c.phase) * (k.sym === "jelly" ? 14 : 5) * scale; }
         c.y = y;
       }
 
