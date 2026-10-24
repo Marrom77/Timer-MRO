@@ -29,9 +29,6 @@
     background: #0f0b2e;
     background: radial-gradient(circle at 50% 35%, #312e81 0%, #0f0b2e 70%);
     background-attachment: fixed;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     min-height: 100vh;
     min-height: -webkit-fill-available;
     min-height: 100dvh;
@@ -43,22 +40,46 @@
     -webkit-user-select: none;
     user-select: none;
   }
-  .panel {
-    width: 100%;
+  button { font-family: inherit; -webkit-appearance: none; appearance: none; touch-action: manipulation; cursor: pointer; }
+
+  /* Zwei Seiten: Timer und Einstellungen */
+  .view {
+    display: none;
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 3vh 16px;
-    display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2vh;
+    justify-content: center;
   }
-  /* Ringgröße: passt sich Höhe und Breite an (Bedienung immer darunter) */
+  body:not(.setup) #timerView { display: flex; }
+  body.setup #setupView { display: flex; }
+
+  .corner {
+    position: absolute;
+    top: max(16px, env(safe-area-inset-top));
+    min-height: 44px;
+    min-width: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .corner:active { background: rgba(255, 255, 255, 0.14); }
+  .gear { right: 16px; width: 44px; height: 44px; border-radius: 50%; font-size: 22px; padding: 0; }
+  .back { left: 16px; border: none; background: none; font-size: 17px; padding: 0 8px; }
+
+  /* Timer-Seite */
   .ring {
-    --size: min(56vh, 80vw);
-    --size: min(56dvh, 80vw);
+    --size: min(60vh, 80vw);
+    --size: min(60dvh, 80vw);
     position: relative;
     width: var(--size);
     height: var(--size);
-    margin-bottom: 1vh;
+    margin-bottom: 5vh;
   }
   .ring svg {
     display: block;
@@ -92,21 +113,104 @@
     white-space: nowrap;
   }
   .display.done { color: #fecaca; }
+  .info {
+    min-height: 1.4em;
+    margin-top: calc(var(--size) * 0.03);
+    font-size: max(15px, calc(var(--size) * 0.042));
+    color: #a5b4fc;
+    text-align: center;
+  }
+  .preset {
+    font-size: max(12px, calc(var(--size) * 0.03));
+    letter-spacing: 0.04em;
+    color: #6366f1;
+    font-variant-numeric: tabular-nums;
+  }
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .buttons button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    transition: transform 0.08s ease, opacity 0.15s ease, border-color 0.15s ease;
+  }
+  .buttons button i { width: 8px; height: 8px; border-radius: 50%; }
+  .buttons button:active { transform: scale(0.96); background: rgba(255, 255, 255, 0.14); }
+  .buttons button:disabled { opacity: 0.35; cursor: default; transform: none; }
+  #btnStart i  { background: #22c55e; }
+  #btnStop i   { background: #ef4444; }
+  #btnResume i { background: #3b82f6; }
+  #btnReset i  { background: #9ca3af; }
+  /* nächste sinnvolle Aktion leicht hervorheben */
+  #btnStart.next  { border-color: rgba(34, 197, 94, 0.55); }
+  #btnStop.next   { border-color: rgba(248, 113, 113, 0.55); }
+  #btnResume.next { border-color: rgba(96, 165, 250, 0.55); }
+
+  /* Einstellungsseite */
+  .setup-card {
+    width: min(380px, 86vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+  .setup-card h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #a5b4fc;
+  }
+  .modes {
+    display: flex;
+    padding: 3px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .modes button {
+    min-width: 96px;
+    min-height: 36px;
+    padding: 6px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .modes button.active { background: rgba(255, 255, 255, 0.16); color: #ffffff; }
   .picker {
     position: relative;
     display: flex;
-    align-items: stretch;
-    width: min(420px, 80vw);
+    align-items: center;
+    width: 220px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
   }
   .picker input {
     flex: 1;
     min-width: 0;
-    font-size: 32px;
-    padding: 14px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-right: none;
-    border-radius: 16px 0 0 16px;
-    background: rgba(255, 255, 255, 0.2);
+    font-family: inherit;
+    font-size: 44px;
+    font-weight: 200;
+    font-variant-numeric: tabular-nums;
+    padding: 4px 0 8px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
     color: #ffffff;
     outline: none;
     text-align: center;
@@ -116,122 +220,78 @@
     appearance: none;
     -webkit-touch-callout: default;
   }
-  .picker input::placeholder { color: rgba(255, 255, 255, 0.6); }
-  .picker input:focus { background: rgba(255, 255, 255, 0.28); }
-  .picker input.invalid { border-color: #fca5a5; }
+  .picker input::placeholder { color: rgba(255, 255, 255, 0.3); }
+  .picker input.invalid { color: #fca5a5; }
+  .picker:focus-within { border-bottom-color: #a855f7; }
   .toggle {
-    width: 72px;
-    font-size: 26px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 0 16px 16px 0;
-    background: rgba(255, 255, 255, 0.28);
-    color: #ffffff;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-appearance: none;
-    appearance: none;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #818cf8;
   }
-  .toggle:active { background: rgba(255, 255, 255, 0.4); }
+  .toggle:active { background: rgba(255, 255, 255, 0.1); }
   .list {
     display: none;
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
-    right: 0;
+    left: -30px;
+    right: -30px;
     max-height: 40vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     margin: 0;
     padding: 6px;
     list-style: none;
-    border-radius: 16px;
-    background: rgba(30, 27, 75, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 14px;
+    background: rgba(30, 27, 75, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
     z-index: 10;
   }
   .list.open { display: block; }
   .list.up { top: auto; bottom: calc(100% + 8px); }
   .list li {
-    font-size: 26px;
-    padding: 14px 18px;
+    font-size: 20px;
+    padding: 11px 16px;
     border-radius: 10px;
     text-align: center;
     cursor: pointer;
     font-variant-numeric: tabular-nums;
   }
-  .list li:hover, .list li.active { background: rgba(255, 255, 255, 0.18); }
-  .modes {
-    display: flex;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-  }
-  .modes button {
-    min-width: 100px;
-    min-height: 40px;
-    padding: 8px 16px;
-    font-size: 16px;
-    font-weight: 600;
-    font-family: inherit;
-    border: none;
-    background: rgba(255, 255, 255, 0.12);
-    color: #ffffff;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-appearance: none;
-    appearance: none;
-  }
-  .modes button.active { background: rgba(255, 255, 255, 0.4); }
-  .picker.clock input { border-right: 1px solid rgba(255, 255, 255, 0.4); border-radius: 16px; }
+  .list li:hover, .list li.active { background: rgba(168, 85, 247, 0.22); }
   .picker.clock .toggle, .picker.clock .list { display: none; }
-  .info {
+  .preview {
     min-height: 1.4em;
-    margin-top: calc(var(--size) * 0.03);
-    font-size: max(15px, calc(var(--size) * 0.042));
-    color: #a5b4fc;
+    font-size: 15px;
+    color: rgba(165, 180, 252, 0.85);
     text-align: center;
   }
   .error {
-    min-height: 1.4em;
-    font-size: 20px;
+    font-size: 15px;
     color: #fecaca;
     text-align: center;
   }
   .error:empty { display: none; }
-  .buttons {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 9px;
-  }
-  .buttons button {
-    min-width: 85px;
-    min-height: 40px;
-    padding: 8px 14px;
-    font-size: 14px;
+  .apply {
+    min-height: 44px;
+    padding: 10px 34px;
+    font-size: 15px;
     font-weight: 600;
-    border: none;
-    border-radius: 10px;
-    color: #ffffff;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-appearance: none;
-    appearance: none;
-    font-family: inherit;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    transition: transform 0.08s ease, opacity 0.15s ease;
+    border-radius: 999px;
+    border: 1px solid rgba(168, 85, 247, 0.7);
+    background: rgba(168, 85, 247, 0.12);
+    color: #e9d5ff;
   }
-  .buttons button:active { transform: scale(0.96); }
-  .buttons button:disabled { opacity: 0.4; cursor: default; transform: none; }
-  #btnStart  { background: #16a34a; }
-  #btnStop   { background: #dc2626; }
-  #btnResume { background: #2563eb; }
-  #btnReset  { background: #6b7280; }
+  .apply:active { background: rgba(168, 85, 247, 0.3); }
 </style>
 </head>
 <body>
-<div class="panel">
+<div class="view" id="timerView">
+  <button type="button" class="corner gear" id="btnSetup" aria-label="Einstellungen">&#9881;&#xFE0E;</button>
+
   <div class="ring">
     <svg viewBox="0 0 100 100" aria-hidden="true">
       <defs>
@@ -246,27 +306,39 @@
     <div class="ring-center">
       <div class="display" id="display">01:30:00</div>
       <div class="info" id="info"></div>
+      <div class="preset" id="preset"></div>
     </div>
   </div>
 
-  <div class="modes" role="group" aria-label="Modus">
-    <button type="button" id="modeDuration" class="active">Dauer</button>
-    <button type="button" id="modeClock">Uhrzeit</button>
-  </div>
-
-  <div class="picker" id="picker">
-    <input type="text" id="timeInput" value="1:30" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="H:MM" aria-label="Zeit (H:MM)">
-    <button type="button" class="toggle" id="toggle" aria-label="Vorschläge anzeigen">&#9662;</button>
-    <ul class="list" id="list" role="listbox"></ul>
-  </div>
-
-  <div class="error" id="error" role="alert"></div>
-
   <div class="buttons">
-    <button type="button" id="btnStart">Start</button>
-    <button type="button" id="btnStop">Stop</button>
-    <button type="button" id="btnResume">Resume</button>
-    <button type="button" id="btnReset">Reset</button>
+    <button type="button" id="btnStart"><i></i>Start</button>
+    <button type="button" id="btnStop"><i></i>Stop</button>
+    <button type="button" id="btnResume"><i></i>Resume</button>
+    <button type="button" id="btnReset"><i></i>Reset</button>
+  </div>
+</div>
+
+<div class="view" id="setupView">
+  <button type="button" class="corner back" id="btnBack">&lsaquo; Timer</button>
+
+  <div class="setup-card">
+    <h1>Timer einstellen</h1>
+
+    <div class="modes" role="group" aria-label="Modus">
+      <button type="button" id="modeDuration" class="active">Dauer</button>
+      <button type="button" id="modeClock">Uhrzeit</button>
+    </div>
+
+    <div class="picker" id="picker">
+      <input type="text" id="timeInput" value="1:30" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="H:MM" aria-label="Zeit (H:MM)">
+      <button type="button" class="toggle" id="toggle" aria-label="Vorschläge anzeigen">&#9662;</button>
+      <ul class="list" id="list" role="listbox"></ul>
+    </div>
+
+    <div class="preview" id="preview"></div>
+    <div class="error" id="error" role="alert"></div>
+
+    <button type="button" class="apply" id="btnApply">Übernehmen</button>
   </div>
 </div>
 
@@ -285,13 +357,18 @@
   var listEl = document.getElementById("list");
   var pickerEl = document.getElementById("picker");
   var errorEl = document.getElementById("error");
+  var previewEl = document.getElementById("preview");
   var btnStart = document.getElementById("btnStart");
   var btnStop = document.getElementById("btnStop");
   var btnResume = document.getElementById("btnResume");
   var btnReset = document.getElementById("btnReset");
+  var btnSetup = document.getElementById("btnSetup");
+  var btnBack = document.getElementById("btnBack");
+  var btnApply = document.getElementById("btnApply");
   var modeDurationEl = document.getElementById("modeDuration");
   var modeClockEl = document.getElementById("modeClock");
   var infoEl = document.getElementById("info");
+  var presetEl = document.getElementById("preset");
   var ringBarEl = document.getElementById("ringBar");
 
   var state = {
@@ -305,7 +382,8 @@
     target: 0,
     clock: null,
     values: { duration: DEFAULT_TIME, clock: "" },
-    targetText: ""
+    targetText: "",
+    draftMode: "duration"
   };
 
   function parseTime(text) {
@@ -337,14 +415,23 @@
     return t.getDate() !== now.getDate() || t.getMonth() !== now.getMonth() || t.getFullYear() !== now.getFullYear();
   }
 
+  function targetText(clock, target) {
+    return "Ziel: " + pad(clock.h) + ":" + pad(clock.m) + " Uhr (" + (isTomorrow(target) ? "morgen" : "heute") + ")";
+  }
+
   function setTarget(clock) {
     state.clock = clock;
     state.target = nextTarget(clock);
-    state.targetText = "Ziel: " + pad(clock.h) + ":" + pad(clock.m) + " Uhr (" + (isTomorrow(state.target) ? "morgen" : "heute") + ")";
+    state.targetText = targetText(clock, state.target);
   }
 
   function pad(n) {
     return n < 10 ? "0" + n : String(n);
+  }
+
+  function clockOf(ms) {
+    var d = new Date(ms);
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
   }
 
   function format(ms) {
@@ -358,11 +445,12 @@
   function infoText() {
     if (state.remainingMs <= 0) { return "Zeit abgelaufen"; }
     if (state.mode === "clock") { return state.targetText; }
-    if (state.running) {
-      var end = new Date(state.endTime);
-      return "Ende um " + pad(end.getHours()) + ":" + pad(end.getMinutes()) + " Uhr";
-    }
+    if (state.running) { return "Ende um " + clockOf(state.endTime) + " Uhr"; }
     return "";
+  }
+
+  function canResume() {
+    return !state.running && state.remainingMs > 0 && state.remainingMs < state.baseMs;
   }
 
   function render() {
@@ -374,8 +462,13 @@
     ringBarEl.classList.toggle("empty", frac <= 0);
     var info = infoText();
     if (infoEl.textContent !== info) { infoEl.textContent = info; }
+    var preset = (state.mode === "clock" ? "Uhrzeit " : "Dauer ") + state.values[state.mode];
+    if (presetEl.textContent !== preset) { presetEl.textContent = preset; }
     btnStop.disabled = !state.running;
-    btnResume.disabled = state.running || state.remainingMs <= 0 || state.remainingMs >= state.baseMs;
+    btnResume.disabled = !canResume();
+    btnStart.classList.toggle("next", !state.running && !canResume());
+    btnStop.classList.toggle("next", state.running);
+    btnResume.classList.toggle("next", canResume());
   }
 
   function clearTick() {
@@ -383,11 +476,6 @@
       clearInterval(state.intervalId);
       state.intervalId = null;
     }
-  }
-
-  function showError(show) {
-    errorEl.textContent = show ? (state.mode === "clock" ? ERROR_TEXT_CLOCK : ERROR_TEXT) : "";
-    inputEl.classList.toggle("invalid", !!show);
   }
 
   function tick() {
@@ -441,36 +529,19 @@
     render();
   }
 
-  function applyInput() {
-    var ms;
-    if (state.mode === "clock") {
-      var clock = parseClock(inputEl.value);
-      if (clock === null) {
-        showError(true);
-        return false;
-      }
-      setTarget(clock);
-      ms = state.target - Date.now();
-    } else {
-      ms = parseTime(inputEl.value);
-      if (ms === null) {
-        showError(true);
-        return false;
-      }
+  // Ausgangswert neu setzen (Uhrzeit-Modus: Zielzeit neu berechnen)
+  function rearm() {
+    if (state.mode === "clock" && state.clock) {
+      setTarget(state.clock);
+      state.baseMs = state.target - Date.now();
     }
-    state.values[state.mode] = inputEl.value.trim();
-    showError(false);
-    clearTick();
-    state.running = false;
-    state.baseMs = ms;
-    state.remainingMs = ms;
-    render();
-    return true;
+    state.remainingMs = state.baseMs;
   }
 
   function start() {
-    closeList();
-    if (!applyInput()) { return; }
+    clearTick();
+    state.running = false;
+    rearm();
     run();
   }
 
@@ -483,40 +554,97 @@
     clearTick();
     state.alertPending = false;
     state.running = false;
-    if (state.mode === "clock" && state.clock) {
-      setTarget(state.clock);
-      state.baseMs = state.target - Date.now();
-    }
-    state.remainingMs = state.baseMs;
+    rearm();
     render();
   }
 
-  // Modus Dauer / Uhrzeit
+  // Einstellungsseite
   function defaultClock() {
     var d = new Date(Date.now() + 3600000);
     return pad(d.getHours()) + ":00";
   }
 
-  function setMode(mode) {
-    if (mode === state.mode) { return; }
+  function showError(show) {
+    errorEl.textContent = show ? (state.draftMode === "clock" ? ERROR_TEXT_CLOCK : ERROR_TEXT) : "";
+    inputEl.classList.toggle("invalid", !!show);
+  }
+
+  function updatePreview() {
+    var text = "";
+    if (state.draftMode === "clock") {
+      var clock = parseClock(inputEl.value);
+      if (clock) { text = targetText(clock, nextTarget(clock)); }
+    } else {
+      var ms = parseTime(inputEl.value);
+      if (ms) { text = "läuft bis ca. " + clockOf(Date.now() + ms) + " Uhr"; }
+    }
+    previewEl.textContent = text;
+  }
+
+  // Modus auf der Einstellungsseite nur vormerken; wirksam erst mit „Übernehmen“
+  function setDraftMode(mode) {
     closeList();
-    clearTick();
-    state.running = false;
-    state.alertPending = false;
-    state.mode = mode;
+    showError(false);
+    state.draftMode = mode;
     var clockMode = mode === "clock";
     modeDurationEl.classList.toggle("active", !clockMode);
     modeClockEl.classList.toggle("active", clockMode);
     pickerEl.classList.toggle("clock", clockMode);
     inputEl.placeholder = clockMode ? "HH:MM" : "H:MM";
     inputEl.setAttribute("aria-label", clockMode ? "Zielzeit (HH:MM)" : "Zeit (H:MM)");
-    state.targetText = "";
     inputEl.value = state.values[mode] || (clockMode ? defaultClock() : DEFAULT_TIME);
-    applyInput();
+    updatePreview();
   }
 
-  modeDurationEl.addEventListener("click", function () { setMode("duration"); });
-  modeClockEl.addEventListener("click", function () { setMode("clock"); });
+  function openSetup() {
+    setDraftMode(state.mode);
+    document.body.classList.add("setup");
+    window.scrollTo(0, 0);
+  }
+
+  function closeSetup() {
+    closeList();
+    inputEl.blur();
+    showError(false);
+    document.body.classList.remove("setup");
+    window.scrollTo(0, 0);
+  }
+
+  // Übernehmen: Timer stoppen und auf den neuen Wert setzen
+  function apply() {
+    closeList();
+    var ms;
+    if (state.draftMode === "clock") {
+      var clock = parseClock(inputEl.value);
+      if (clock === null) {
+        showError(true);
+        return;
+      }
+      setTarget(clock);
+      ms = state.target - Date.now();
+    } else {
+      ms = parseTime(inputEl.value);
+      if (ms === null) {
+        showError(true);
+        return;
+      }
+    }
+    state.mode = state.draftMode;
+    state.values[state.mode] = inputEl.value.trim();
+    clearTick();
+    state.running = false;
+    state.alertPending = false;
+    state.baseMs = ms;
+    state.remainingMs = ms;
+    render();
+    closeSetup();
+  }
+
+  modeDurationEl.addEventListener("click", function () { setDraftMode("duration"); });
+  modeClockEl.addEventListener("click", function () { setDraftMode("clock"); });
+  btnSetup.addEventListener("click", openSetup);
+  btnBack.addEventListener("click", closeSetup);
+  btnApply.addEventListener("click", apply);
 
   // Dropdown
   function buildList() {
@@ -562,7 +690,8 @@
     if (!t || t === listEl) { return; }
     inputEl.value = t.getAttribute("data-value");
     closeList();
-    applyInput();
+    showError(false);
+    updatePreview();
   });
 
   function onOutside(e) {
@@ -572,19 +701,16 @@
   document.addEventListener("touchstart", onOutside, { passive: true });
 
   // Freie Eingabe
-  inputEl.addEventListener("change", function () {
-    applyInput();
-  });
   inputEl.addEventListener("input", function () {
-    var ok = state.mode === "clock" ? parseClock(inputEl.value) !== null : parseTime(inputEl.value) !== null;
+    var ok = state.draftMode === "clock" ? parseClock(inputEl.value) !== null : parseTime(inputEl.value) !== null;
     if (errorEl.textContent && ok) { showError(false); }
+    updatePreview();
   });
   inputEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
-      closeList();
-      applyInput();
       inputEl.blur();
+      apply();
     } else if (e.key === "Escape") {
       closeList();
     }
