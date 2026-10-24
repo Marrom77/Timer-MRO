@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Timer-MRO">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#1e1b4b">
+<title>Timer-MRO</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #ffffff;
+    background: #1e1b4b;
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 45%, #0ea5e9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .panel {
+    width: 94vw;
+    max-width: 1400px;
+    margin: 2vh 0;
+    padding: 4vh 3vw;
+    border-radius: 32px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3vh;
+  }
+  .display {
+    font-size: 18vw;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+  }
+  .display.done { color: #fecaca; }
+  .picker {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: min(420px, 80vw);
+  }
+  .picker input {
+    flex: 1;
+    min-width: 0;
+    font-size: 32px;
+    padding: 14px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-right: none;
+    border-radius: 16px 0 0 16px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    outline: none;
+    text-align: center;
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-touch-callout: default;
+  }
+  .picker input::placeholder { color: rgba(255, 255, 255, 0.6); }
+  .picker input:focus { background: rgba(255, 255, 255, 0.28); }
+  .picker input.invalid { border-color: #fca5a5; }
+  .toggle {
+    width: 72px;
+    font-size: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 0 16px 16px 0;
+    background: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .toggle:active { background: rgba(255, 255, 255, 0.4); }
+  .list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    border-radius: 16px;
+    background: rgba(30, 27, 75, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+  }
+  .list.open { display: block; }
+  .list li {
+    font-size: 26px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+  }
+  .list li:hover, .list li.active { background: rgba(255, 255, 255, 0.18); }
+  .error {
+    min-height: 1.4em;
+    font-size: 20px;
+    color: #fecaca;
+    text-align: center;
+  }
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 9px;
+  }
+  .buttons button {
+    min-width: 85px;
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    color: #ffffff;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+  .buttons button:active { transform: scale(0.96); }
+  .buttons button:disabled { opacity: 0.4; cursor: default; transform: none; }
+  #btnStart  { background: #16a34a; }
+  #btnStop   { background: #dc2626; }
+  #btnResume { background: #2563eb; }
+  #btnReset  { background: #6b7280; }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="display" id="display">01:30:00</div>
+
+  <div class="picker" id="picker">
+    <input type="text" id="timeInput" value="1:30" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="H:MM" aria-label="Zeit (H:MM)">
+    <button type="button" class="toggle" id="toggle" aria-label="Vorschläge anzeigen">&#9662;</button>
+    <ul class="list" id="list" role="listbox"></ul>
+  </div>
+
+  <div class="error" id="error" role="alert"></div>
+
+  <div class="buttons">
+    <button type="button" id="btnStart">Start</button>
+    <button type="button" id="btnStop">Stop</button>
+    <button type="button" id="btnResume">Resume</button>
+    <button type="button" id="btnReset">Reset</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var PRESETS = ["0:06", "0:10", "0:12", "0:15", "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00", "2:15", "2:30", "2:53"];
+  var ERROR_TEXT = "Bitte Format H:MM verwenden, z. B. 1:30";
+  var DEFAULT_TIME = "1:30";
+
+  var displayEl = document.getElementById("display");
+  var inputEl = document.getElementById("timeInput");
+  var toggleEl = document.getElementById("toggle");
+  var listEl = document.getElementById("list");
+  var pickerEl = document.getElementById("picker");
+  var errorEl = document.getElementById("error");
+  var btnStart = document.getElementById("btnStart");
+  var btnStop = document.getElementById("btnStop");
+  var btnResume = document.getElementById("btnResume");
+  var btnReset = document.getElementById("btnReset");
+
+  var state = {
+    baseMs: parseTime(DEFAULT_TIME),
+    remainingMs: parseTime(DEFAULT_TIME),
+    endTime: 0,
+    running: false,
+    intervalId: null,
+    alertPending: false
+  };
+
+  function parseTime(text) {
+    var m = /^(\d{1,2}):([0-5]\d)$/.exec(String(text).trim());
+    if (!m) { return null; }
+    var ms = (parseInt(m[1], 10) * 3600 + parseInt(m[2], 10) * 60) * 1000;
+    return ms > 0 ? ms : null;
+  }
+
+  function pad(n) {
+    return n < 10 ? "0" + n : String(n);
+  }
+
+  function format(ms) {
+    var total = Math.max(0, Math.ceil(ms / 1000));
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    return pad(h) + ":" + pad(m) + ":" + pad(s);
+  }
+
+  function render() {
+    displayEl.textContent = format(state.remainingMs);
+    displayEl.classList.toggle("done", state.remainingMs <= 0);
+    btnStop.disabled = !state.running;
+    btnResume.disabled = state.running || state.remainingMs <= 0 || state.remainingMs >= state.baseMs;
+  }
+
+  function clearTick() {
+    if (state.intervalId !== null) {
+      clearInterval(state.intervalId);
+      state.intervalId = null;
+    }
+  }
+
+  function showError(show) {
+    errorEl.textContent = show ? ERROR_TEXT : "";
+    inputEl.classList.toggle("invalid", !!show);
+  }
+
+  function tick() {
+    if (!state.running) { return; }
+    state.remainingMs = state.endTime - Date.now();
+    if (state.remainingMs <= 0) {
+      finish();
+      return;
+    }
+    render();
+  }
+
+  function finish() {
+    clearTick();
+    state.running = false;
+    state.remainingMs = 0;
+    render();
+    state.alertPending = true;
+    // iOS unterdrückt alert() in Hintergrund-Tabs: erst anzeigen, wenn sichtbar
+    if (!document.hidden) { showAlert(); }
+  }
+
+  function showAlert() {
+    if (!state.alertPending) { return; }
+    state.alertPending = false;
+    setTimeout(function () {
+      alert("Zeit abgelaufen!");
+    }, 30);
+  }
+
+  function wake() {
+    tick();
+    if (!document.hidden) { showAlert(); }
+  }
+
+  function run() {
+    clearTick();
+    state.alertPending = false;
+    state.running = true;
+    state.endTime = Date.now() + state.remainingMs;
+    state.intervalId = setInterval(tick, 200);
+    render();
+  }
+
+  function stop() {
+    if (!state.running) { return; }
+    state.remainingMs = Math.max(0, state.endTime - Date.now());
+    clearTick();
+    state.running = false;
+    render();
+  }
+
+  function applyInput() {
+    var ms = parseTime(inputEl.value);
+    if (ms === null) {
+      showError(true);
+      return false;
+    }
+    showError(false);
+    clearTick();
+    state.running = false;
+    state.baseMs = ms;
+    state.remainingMs = ms;
+    render();
+    return true;
+  }
+
+  function start() {
+    closeList();
+    if (!applyInput()) { return; }
+    run();
+  }
+
+  function resume() {
+    if (state.running || state.remainingMs <= 0) { return; }
+    run();
+  }
+
+  function reset() {
+    clearTick();
+    state.alertPending = false;
+    state.running = false;
+    state.remainingMs = state.baseMs;
+    render();
+  }
+
+  // Dropdown
+  function buildList() {
+    var frag = document.createDocumentFragment();
+    PRESETS.forEach(function (p) {
+      var li = document.createElement("li");
+      li.textContent = p;
+      li.setAttribute("role", "option");
+      li.setAttribute("data-value", p);
+      frag.appendChild(li);
+    });
+    listEl.appendChild(frag);
+  }
+
+  function openList() {
+    var items = listEl.children;
+    for (var i = 0; i < items.length; i++) {
+      items[i].classList.toggle("active", items[i].getAttribute("data-value") === inputEl.value.trim());
+    }
+    listEl.classList.add("open");
+  }
+
+  function closeList() {
+    listEl.classList.remove("open");
+  }
+
+  function isListOpen() {
+    return listEl.classList.contains("open");
+  }
+
+  toggleEl.addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (isListOpen()) { closeList(); } else { openList(); }
+  });
+
+  listEl.addEventListener("click", function (e) {
+    var t = e.target;
+    while (t && t !== listEl && t.tagName !== "LI") { t = t.parentNode; }
+    if (!t || t === listEl) { return; }
+    inputEl.value = t.getAttribute("data-value");
+    closeList();
+    applyInput();
+  });
+
+  function onOutside(e) {
+    if (isListOpen() && !pickerEl.contains(e.target)) { closeList(); }
+  }
+  document.addEventListener("mousedown", onOutside);
+  document.addEventListener("touchstart", onOutside, { passive: true });
+
+  // Freie Eingabe
+  inputEl.addEventListener("change", function () {
+    applyInput();
+  });
+  inputEl.addEventListener("input", function () {
+    if (errorEl.textContent && parseTime(inputEl.value) !== null) { showError(false); }
+  });
+  inputEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      closeList();
+      applyInput();
+      inputEl.blur();
+    } else if (e.key === "Escape") {
+      closeList();
+    }
+  });
+
+  btnStart.addEventListener("click", start);
+  btnStop.addEventListener("click", stop);
+  btnResume.addEventListener("click", resume);
+  btnReset.addEventListener("click", reset);
+
+  // Nach Tab-Wechsel sofort korrekt aktualisieren
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) { wake(); }
+  });
+  window.addEventListener("pageshow", wake);
+  window.addEventListener("focus", wake);
+
+  buildList();
+  render();
+
+  // PWA: Service Worker nur über http(s) registrieren (bei file:// läuft die App ohne)
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
