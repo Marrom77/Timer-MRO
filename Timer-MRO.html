@@ -137,6 +137,36 @@
     font-variant-numeric: tabular-nums;
   }
   .list li:hover, .list li.active { background: rgba(255, 255, 255, 0.18); }
+  .modes {
+    display: flex;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .modes button {
+    min-width: 100px;
+    min-height: 40px;
+    padding: 8px 16px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .modes button.active { background: rgba(255, 255, 255, 0.4); }
+  .picker.clock input { border-right: 1px solid rgba(255, 255, 255, 0.4); border-radius: 16px; }
+  .picker.clock .toggle, .picker.clock .list { display: none; }
+  .info {
+    min-height: 1.4em;
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.85);
+    text-align: center;
+  }
   .error {
     min-height: 1.4em;
     font-size: 20px;
@@ -178,12 +208,18 @@
 <div class="panel">
   <div class="display" id="display">01:30:00</div>
 
+  <div class="modes" role="group" aria-label="Modus">
+    <button type="button" id="modeDuration" class="active">Dauer</button>
+    <button type="button" id="modeClock">Uhrzeit</button>
+  </div>
+
   <div class="picker" id="picker">
     <input type="text" id="timeInput" value="1:30" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="H:MM" aria-label="Zeit (H:MM)">
     <button type="button" class="toggle" id="toggle" aria-label="Vorschläge anzeigen">&#9662;</button>
     <ul class="list" id="list" role="listbox"></ul>
   </div>
 
+  <div class="info" id="info"></div>
   <div class="error" id="error" role="alert"></div>
 
   <div class="buttons">
@@ -200,6 +236,7 @@
 
   var PRESETS = ["0:06", "0:10", "0:12", "0:15", "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00", "2:15", "2:30", "2:53"];
   var ERROR_TEXT = "Bitte Format H:MM verwenden, z. B. 1:30";
+  var ERROR_TEXT_CLOCK = "Bitte Uhrzeit im Format HH:MM verwenden, z. B. 14:30";
   var DEFAULT_TIME = "1:30";
 
   var displayEl = document.getElementById("display");
@@ -212,6 +249,9 @@
   var btnStop = document.getElementById("btnStop");
   var btnResume = document.getElementById("btnResume");
   var btnReset = document.getElementById("btnReset");
+  var modeDurationEl = document.getElementById("modeDuration");
+  var modeClockEl = document.getElementById("modeClock");
+  var infoEl = document.getElementById("info");
 
   var state = {
     baseMs: parseTime(DEFAULT_TIME),
@@ -219,7 +259,11 @@
     endTime: 0,
     running: false,
     intervalId: null,
-    alertPending: false
+    alertPending: false,
+    mode: "duration",
+    target: 0,
+    clock: null,
+    values: { duration: DEFAULT_TIME, clock: "" }
   };
 
   function parseTime(text) {
@@ -227,6 +271,34 @@
     if (!m) { return null; }
     var ms = (parseInt(m[1], 10) * 3600 + parseInt(m[2], 10) * 60) * 1000;
     return ms > 0 ? ms : null;
+  }
+
+  function parseClock(text) {
+    var m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(String(text).trim());
+    if (!m) { return null; }
+    return { h: parseInt(m[1], 10), m: parseInt(m[2], 10) };
+  }
+
+  // Nächster Zeitpunkt mit dieser Uhrzeit: heute, sonst morgen
+  function nextTarget(clock) {
+    var now = new Date();
+    var t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), clock.h, clock.m, 0, 0);
+    if (t.getTime() <= now.getTime()) {
+      t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, clock.h, clock.m, 0, 0);
+    }
+    return t.getTime();
+  }
+
+  function isTomorrow(ms) {
+    var now = new Date();
+    var t = new Date(ms);
+    return t.getDate() !== now.getDate() || t.getMonth() !== now.getMonth() || t.getFullYear() !== now.getFullYear();
+  }
+
+  function setTarget(clock) {
+    state.clock = clock;
+    state.target = nextTarget(clock);
+    infoEl.textContent = "Ziel: " + pad(clock.h) + ":" + pad(clock.m) + " Uhr (" + (isTomorrow(state.target) ? "morgen" : "heute") + ")";
   }
 
   function pad(n) {
@@ -256,7 +328,7 @@
   }
 
   function showError(show) {
-    errorEl.textContent = show ? ERROR_TEXT : "";
+    errorEl.textContent = show ? (state.mode === "clock" ? ERROR_TEXT_CLOCK : ERROR_TEXT) : "";
     inputEl.classList.toggle("invalid", !!show);
   }
 
@@ -297,9 +369,10 @@
     clearTick();
     state.alertPending = false;
     state.running = true;
-    state.endTime = Date.now() + state.remainingMs;
+    // Uhrzeit-Modus: immer gegen die feste Zielzeit zählen
+    state.endTime = state.mode === "clock" ? state.target : Date.now() + state.remainingMs;
     state.intervalId = setInterval(tick, 200);
-    render();
+    tick();
   }
 
   function stop() {
@@ -311,11 +384,23 @@
   }
 
   function applyInput() {
-    var ms = parseTime(inputEl.value);
-    if (ms === null) {
-      showError(true);
-      return false;
+    var ms;
+    if (state.mode === "clock") {
+      var clock = parseClock(inputEl.value);
+      if (clock === null) {
+        showError(true);
+        return false;
+      }
+      setTarget(clock);
+      ms = state.target - Date.now();
+    } else {
+      ms = parseTime(inputEl.value);
+      if (ms === null) {
+        showError(true);
+        return false;
+      }
     }
+    state.values[state.mode] = inputEl.value.trim();
     showError(false);
     clearTick();
     state.running = false;
@@ -340,9 +425,40 @@
     clearTick();
     state.alertPending = false;
     state.running = false;
+    if (state.mode === "clock" && state.clock) {
+      setTarget(state.clock);
+      state.baseMs = state.target - Date.now();
+    }
     state.remainingMs = state.baseMs;
     render();
   }
+
+  // Modus Dauer / Uhrzeit
+  function defaultClock() {
+    var d = new Date(Date.now() + 3600000);
+    return pad(d.getHours()) + ":00";
+  }
+
+  function setMode(mode) {
+    if (mode === state.mode) { return; }
+    closeList();
+    clearTick();
+    state.running = false;
+    state.alertPending = false;
+    state.mode = mode;
+    var clockMode = mode === "clock";
+    modeDurationEl.classList.toggle("active", !clockMode);
+    modeClockEl.classList.toggle("active", clockMode);
+    pickerEl.classList.toggle("clock", clockMode);
+    inputEl.placeholder = clockMode ? "HH:MM" : "H:MM";
+    inputEl.setAttribute("aria-label", clockMode ? "Zielzeit (HH:MM)" : "Zeit (H:MM)");
+    infoEl.textContent = "";
+    inputEl.value = state.values[mode] || (clockMode ? defaultClock() : DEFAULT_TIME);
+    applyInput();
+  }
+
+  modeDurationEl.addEventListener("click", function () { setMode("duration"); });
+  modeClockEl.addEventListener("click", function () { setMode("clock"); });
 
   // Dropdown
   function buildList() {
@@ -398,7 +514,8 @@
     applyInput();
   });
   inputEl.addEventListener("input", function () {
-    if (errorEl.textContent && parseTime(inputEl.value) !== null) { showError(false); }
+    var ok = state.mode === "clock" ? parseClock(inputEl.value) !== null : parseTime(inputEl.value) !== null;
+    if (errorEl.textContent && ok) { showError(false); }
   });
   inputEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
