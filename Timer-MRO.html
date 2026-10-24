@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Timer-MRO">
 <meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#0f0b2e">
+<meta name="theme-color" content="#0b1026">
 <title>Timer-MRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -26,9 +26,7 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #ffffff;
-    background: #0f0b2e;
-    background: radial-gradient(circle at 50% 35%, #312e81 0%, #0f0b2e 70%);
-    background-attachment: fixed;
+    background: #0b1026;
     min-height: 100vh;
     min-height: -webkit-fill-available;
     min-height: 100dvh;
@@ -72,70 +70,151 @@
   .gear { right: 16px; width: 44px; height: 44px; border-radius: 50%; font-size: 22px; padding: 0; }
   .back { left: 16px; border: none; background: none; font-size: 17px; padding: 0 8px; }
 
-  /* Timer-Seite */
-  .ring {
-    --size: min(60vh, 80vw);
-    --size: min(60dvh, 80vw);
-    position: relative;
-    width: var(--size);
-    height: var(--size);
-    margin-bottom: 5vh;
+  /* Timer-Seite: Wasserpegel = verbleibende Zeit */
+  #timerView { --level: 100%; touch-action: none; overflow: hidden; }
+  .gear { z-index: 5; }
+  .water {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--level);
+    background: linear-gradient(180deg, #38bdf8 0%, #1d4ed8 55%, #1e1b4b 100%);
+    transition: height 0.4s ease;
   }
-  .ring svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-    overflow: visible;
-  }
-  .ring .track { stroke: rgba(255, 255, 255, 0.08); }
-  .ring .bar {
-    -webkit-filter: drop-shadow(0 0 3px #a855f7);
-    filter: drop-shadow(0 0 3px #a855f7);
-    transition: stroke-dashoffset 0.25s linear;
-  }
-  .ring .bar.empty { opacity: 0; }
-  .ring.dragging .bar { transition: none; }
-  /* Griff zum Ziehen: klein, nur leicht heller als der Bogen */
-  .ring .knob {
-    fill: rgba(255, 255, 255, 0.85);
-    transition: opacity 0.2s ease;
-  }
-  .ring.dragging .knob { fill: #ffffff; }
-  .ring .knob.hidden { opacity: 0; }
-  .ring.adjustable svg { touch-action: none; cursor: grab; }
-  .ring.dragging svg { cursor: grabbing; }
-  .ring-center {
+  .wave {
     position: absolute;
-    inset: 0;
+    left: 0;
+    width: 200%;
+    height: 36px;
+    -webkit-animation: drift 9s linear infinite;
+    animation: drift 9s linear infinite;
+  }
+  .wave path { fill: #38bdf8; }
+  .wave.a { top: -34px; }
+  .wave.b { top: -24px; opacity: 0.5; -webkit-animation-duration: 14s; animation-duration: 14s; -webkit-animation-direction: reverse; animation-direction: reverse; }
+  @-webkit-keyframes drift { to { -webkit-transform: translateX(-50%); } }
+  @keyframes drift { to { transform: translateX(-50%); } }
+  .bubbles { position: absolute; inset: 0; overflow: hidden; }
+  .bub {
+    position: absolute;
+    bottom: -30px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.06);
+    -webkit-animation: rise linear infinite;
+    animation: rise linear infinite;
+  }
+  @-webkit-keyframes rise { to { -webkit-transform: translateY(-110vh); } }
+  @keyframes rise { to { transform: translateY(-110vh); } }
+  @media (prefers-reduced-motion: reduce) {
+    .wave, .bub { -webkit-animation: none; animation: none; }
+  }
+  /* Skala am rechten Rand mit Prozent-Schild am Wasserspiegel */
+  .scale {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 22px;
     pointer-events: none;
+    background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0 1px, transparent 1px 10%);
+    -webkit-mask: linear-gradient(90deg, transparent 0 2px, #000 2px);
+    mask: linear-gradient(90deg, transparent 0 2px, #000 2px);
+  }
+  .scale::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0 1px, transparent 1px 5%);
+  }
+  .mark {
+    position: fixed;
+    right: 30px;
+    bottom: var(--level);
+    -webkit-transform: translateY(50%);
+    transform: translateY(50%);
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    background: rgba(255, 255, 255, 0.16);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    pointer-events: none;
+    transition: bottom 0.4s ease;
+  }
+  /* Griff am Wasserspiegel (nur Modus Dauer) */
+  .handle {
+    position: fixed;
+    left: 50%;
+    bottom: var(--level);
+    width: 56px;
+    height: 5px;
+    margin-left: -28px;
+    margin-bottom: -2px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    transition: bottom 0.4s ease, opacity 0.2s ease;
+  }
+  #timerView.dragging .handle { background: #ffffff; box-shadow: 0 0 12px rgba(255, 255, 255, 0.8); }
+  #timerView.dragging .water, #timerView.dragging .mark, #timerView.dragging .handle,
+  #timerView.dragging .readout { transition: none; }
+  .handle.hidden, .mark.hidden { opacity: 0; }
+  /* Anzeige doppelt: über Wasser weiß, unter Wasser dunkel (per clip-path an der Oberfläche getrennt) */
+  .readout {
+    position: fixed;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding-bottom: 8vh;
+    pointer-events: none;
+    transition: clip-path 0.4s ease, -webkit-clip-path 0.4s ease;
   }
+  .readout.above { color: #ffffff; -webkit-clip-path: inset(0 0 var(--level) 0); clip-path: inset(0 0 var(--level) 0); }
+  .readout.below { color: #0b1026; -webkit-clip-path: inset(calc(100% - var(--level)) 0 0 0); clip-path: inset(calc(100% - var(--level)) 0 0 0); }
   .display {
-    font-size: calc(var(--size) * 0.17);
+    font-size: min(17vw, 24vh);
     font-weight: 200;
     line-height: 1;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
     text-align: center;
     white-space: nowrap;
   }
-  .display.done { color: #fecaca; }
+  .readout.above .display.done { color: #fca5a5; }
   .info {
     min-height: 1.4em;
-    margin-top: calc(var(--size) * 0.03);
-    font-size: max(15px, calc(var(--size) * 0.042));
-    color: #a5b4fc;
+    margin-top: 14px;
+    font-size: 20px;
+    font-weight: 500;
+    opacity: 0.85;
     text-align: center;
   }
   .preset {
-    font-size: max(12px, calc(var(--size) * 0.03));
-    letter-spacing: 0.04em;
-    color: #6366f1;
+    margin-top: 2px;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.6;
     font-variant-numeric: tabular-nums;
+  }
+  .buttons-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: max(5vh, env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: center;
+    padding: 0 16px;
+    z-index: 4;
   }
   .buttons {
     display: flex;
@@ -152,9 +231,11 @@
     font-size: 15px;
     font-weight: 500;
     border-radius: 999px;
-    color: rgba(255, 255, 255, 0.85);
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(11, 16, 38, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     transition: transform 0.08s ease, opacity 0.15s ease, border-color 0.15s ease;
   }
   .buttons button i { width: 8px; height: 8px; border-radius: 50%; }
@@ -165,9 +246,9 @@
   #btnResume i { background: #3b82f6; }
   #btnReset i  { background: #9ca3af; }
   /* nächste sinnvolle Aktion leicht hervorheben */
-  #btnStart.next  { border-color: rgba(34, 197, 94, 0.55); }
-  #btnStop.next   { border-color: rgba(248, 113, 113, 0.55); }
-  #btnResume.next { border-color: rgba(96, 165, 250, 0.55); }
+  #btnStart.next  { border-color: rgba(34, 197, 94, 0.7); }
+  #btnStop.next   { border-color: rgba(248, 113, 113, 0.7); }
+  #btnResume.next { border-color: rgba(96, 165, 250, 0.7); }
 
   /* Einstellungsseite */
   .setup-card {
@@ -183,7 +264,7 @@
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #a5b4fc;
+    color: #7dd3fc;
   }
   .modes {
     display: flex;
@@ -233,7 +314,7 @@
   }
   .picker input::placeholder { color: rgba(255, 255, 255, 0.3); }
   .picker input.invalid { color: #fca5a5; }
-  .picker:focus-within { border-bottom-color: #a855f7; }
+  .picker:focus-within { border-bottom-color: #38bdf8; }
   .toggle {
     min-width: 44px;
     min-height: 44px;
@@ -241,7 +322,7 @@
     border: none;
     border-radius: 10px;
     background: transparent;
-    color: #818cf8;
+    color: #7dd3fc;
   }
   .toggle:active { background: rgba(255, 255, 255, 0.1); }
   .list {
@@ -257,7 +338,7 @@
     padding: 6px;
     list-style: none;
     border-radius: 14px;
-    background: rgba(30, 27, 75, 0.97);
+    background: rgba(15, 23, 52, 0.97);
     border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
     z-index: 10;
@@ -272,12 +353,12 @@
     cursor: pointer;
     font-variant-numeric: tabular-nums;
   }
-  .list li:hover, .list li.active { background: rgba(168, 85, 247, 0.22); }
+  .list li:hover, .list li.active { background: rgba(56, 189, 248, 0.22); }
   .picker.clock .toggle, .picker.clock .list { display: none; }
   .preview {
     min-height: 1.4em;
     font-size: 15px;
-    color: rgba(165, 180, 252, 0.85);
+    color: rgba(125, 211, 252, 0.85);
     text-align: center;
   }
   .error {
@@ -292,41 +373,49 @@
     font-size: 15px;
     font-weight: 600;
     border-radius: 999px;
-    border: 1px solid rgba(168, 85, 247, 0.7);
-    background: rgba(168, 85, 247, 0.12);
-    color: #e9d5ff;
+    border: 1px solid rgba(56, 189, 248, 0.7);
+    background: rgba(56, 189, 248, 0.12);
+    color: #e0f2fe;
   }
-  .apply:active { background: rgba(168, 85, 247, 0.3); }
+  .apply:active { background: rgba(56, 189, 248, 0.3); }
 </style>
 </head>
 <body>
 <div class="view" id="timerView">
   <button type="button" class="corner gear" id="btnSetup" aria-label="Einstellungen">&#9881;&#xFE0E;</button>
 
-  <div class="ring" id="ring">
-    <svg viewBox="0 0 100 100" aria-hidden="true">
-      <defs>
-        <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#22d3ee"/>
-          <stop offset="1" stop-color="#a855f7"/>
-        </linearGradient>
-      </defs>
-      <circle class="track" cx="50" cy="50" r="45" fill="none" stroke-width="4"/>
-      <circle class="bar" id="ringBar" cx="50" cy="50" r="45" fill="none" stroke="url(#ringGrad)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/>
-      <circle class="knob" id="ringKnob" cx="95" cy="50" r="1.6"/>
-    </svg>
-    <div class="ring-center">
-      <div class="display" id="display">01:30:00</div>
-      <div class="info" id="info"></div>
-      <div class="preset" id="preset"></div>
+  <div class="water" aria-hidden="true">
+    <svg class="wave b" viewBox="0 0 2000 36" preserveAspectRatio="none"><path d="M0 18 Q125 4 250 18 T500 18 T750 18 T1000 18 T1250 18 T1500 18 T1750 18 T2000 18 V36 H0Z"/></svg>
+    <svg class="wave a" viewBox="0 0 2000 36" preserveAspectRatio="none"><path d="M0 20 Q166 4 333 20 T666 20 T1000 20 T1333 20 T1666 20 T2000 20 V36 H0Z"/></svg>
+    <div class="bubbles">
+    <div class="bub" style="width:16px;height:16px;left:18%;-webkit-animation-duration:13s;animation-duration:13s"></div>
+    <div class="bub" style="width:9px;height:9px;left:74%;-webkit-animation-duration:9s;animation-duration:9s;-webkit-animation-delay:-4s;animation-delay:-4s"></div>
+    <div class="bub" style="width:24px;height:24px;left:61%;-webkit-animation-duration:17s;animation-duration:17s;-webkit-animation-delay:-9s;animation-delay:-9s"></div>
+    <div class="bub" style="width:7px;height:7px;left:33%;-webkit-animation-duration:11s;animation-duration:11s;-webkit-animation-delay:-2s;animation-delay:-2s"></div>
     </div>
   </div>
+  <div class="scale" aria-hidden="true"></div>
+  <div class="mark" id="mark">100 %</div>
+  <div class="handle" id="handle"></div>
 
+  <div class="readout above">
+    <div class="display" id="display">01:30:00</div>
+    <div class="info" id="info"></div>
+    <div class="preset" id="preset"></div>
+  </div>
+  <div class="readout below" aria-hidden="true">
+    <div class="display" id="display2">01:30:00</div>
+    <div class="info" id="info2"></div>
+    <div class="preset" id="preset2"></div>
+  </div>
+
+  <div class="buttons-wrap">
   <div class="buttons">
     <button type="button" id="btnStart"><i></i>Start</button>
     <button type="button" id="btnStop"><i></i>Stop</button>
     <button type="button" id="btnResume"><i></i>Resume</button>
     <button type="button" id="btnReset"><i></i>Reset</button>
+  </div>
   </div>
 </div>
 
@@ -362,6 +451,8 @@
   var ERROR_TEXT = "Bitte Format H:MM verwenden, z. B. 1:30";
   var ERROR_TEXT_CLOCK = "Bitte Uhrzeit im Format HH:MM verwenden, z. B. 14:30";
   var DEFAULT_TIME = "1:30";
+  var MAX_LEVEL = 0.88;   // voller Pegel bleibt unter dem Zahnrad sichtbar
+  var MINUTE = 60000;
 
   var displayEl = document.getElementById("display");
   var inputEl = document.getElementById("timeInput");
@@ -381,9 +472,12 @@
   var modeClockEl = document.getElementById("modeClock");
   var infoEl = document.getElementById("info");
   var presetEl = document.getElementById("preset");
-  var ringBarEl = document.getElementById("ringBar");
-  var ringEl = document.getElementById("ring");
-  var ringKnobEl = document.getElementById("ringKnob");
+  var display2El = document.getElementById("display2");
+  var info2El = document.getElementById("info2");
+  var preset2El = document.getElementById("preset2");
+  var timerViewEl = document.getElementById("timerView");
+  var markEl = document.getElementById("mark");
+  var handleEl = document.getElementById("handle");
 
   var state = {
     baseMs: parseTime(DEFAULT_TIME),
@@ -469,24 +563,26 @@
     return !state.running && state.remainingMs > 0 && state.remainingMs < state.baseMs;
   }
 
+  function setText(el, el2, text) {
+    if (el.textContent !== text) {
+      el.textContent = text;
+      el2.textContent = text;
+    }
+  }
+
   function render() {
-    displayEl.textContent = format(state.remainingMs);
+    setText(displayEl, display2El, format(state.remainingMs));
     displayEl.classList.toggle("done", state.remainingMs <= 0);
-    // Ring: Anteil der verbleibenden Zeit
+    // Wasserpegel: Anteil der verbleibenden Zeit
     var frac = state.baseMs > 0 ? Math.min(1, Math.max(0, state.remainingMs / state.baseMs)) : 0;
-    ringBarEl.setAttribute("stroke-dashoffset", String(100 * (1 - frac)));
-    ringBarEl.classList.toggle("empty", frac <= 0);
-    // Griff am Ende des Bogens (SVG ist um -90° gedreht, 0 = oben)
-    var a = frac * 2 * Math.PI;
-    ringKnobEl.setAttribute("cx", (50 + 45 * Math.cos(a)).toFixed(2));
-    ringKnobEl.setAttribute("cy", (50 + 45 * Math.sin(a)).toFixed(2));
+    timerViewEl.style.setProperty("--level", (frac * MAX_LEVEL * 100).toFixed(2) + "%");
+    var pct = Math.round(frac * 100) + " %";
+    if (markEl.textContent !== pct) { markEl.textContent = pct; }
+    markEl.classList.toggle("hidden", frac <= 0);
     var adjustable = state.mode === "duration" && state.baseMs > 0;
-    ringEl.classList.toggle("adjustable", adjustable);
-    ringKnobEl.classList.toggle("hidden", !adjustable || frac <= 0);
-    var info = infoText();
-    if (infoEl.textContent !== info) { infoEl.textContent = info; }
-    var preset = (state.mode === "clock" ? "Uhrzeit " : "Dauer ") + state.values[state.mode];
-    if (presetEl.textContent !== preset) { presetEl.textContent = preset; }
+    handleEl.classList.toggle("hidden", !adjustable || frac <= 0);
+    setText(infoEl, info2El, infoText());
+    setText(presetEl, preset2El, (state.mode === "clock" ? "Uhrzeit " : "Dauer ") + state.values[state.mode]);
     btnStop.disabled = !state.running;
     btnResume.disabled = !canResume();
     btnStart.classList.toggle("next", !state.running && !canResume());
@@ -564,7 +660,7 @@
   function start() {
     clearTick();
     state.running = false;
-    // Am Ring eingestellte Restzeit gilt für den nächsten Start
+    // Am Wasserspiegel eingestellte Restzeit gilt für den nächsten Start
     if (!state.adjusted || state.remainingMs <= 0) { rearm(); }
     state.adjusted = false;
     run();
@@ -748,57 +844,46 @@
   btnResume.addEventListener("click", resume);
   btnReset.addEventListener("click", reset);
 
-  // Restzeit am Ring ziehen (nur Modus Dauer): Minutenschritte, max. Ausgangszeit
-  var MINUTE = 60000;
+  // Restzeit am Wasserspiegel ziehen (nur Modus Dauer): Minutenschritte, max. Ausgangszeit
+  var GRAB = 60;   // Fangbereich um den Wasserspiegel in px
 
-  function ringFraction(e) {
-    var r = ringEl.getBoundingClientRect();
-    var dx = e.clientX - (r.left + r.width / 2);
-    var dy = e.clientY - (r.top + r.height / 2);
-    var dist = Math.sqrt(dx * dx + dy * dy) / (r.width / 2);
-    var angle = Math.atan2(dx, -dy);
-    if (angle < 0) { angle += 2 * Math.PI; }
-    return { frac: angle / (2 * Math.PI), dist: dist };
+  function levelAt(e) {
+    var h = window.innerHeight;
+    return Math.min(1, Math.max(0, (1 - e.clientY / h) / MAX_LEVEL));
   }
 
-  function setFromRing(frac) {
-    var d = state.drag;
-    // kein Sprung über 12 Uhr hinweg: am Anfang bzw. Ende festhalten
-    if (frac - d.frac > 0.5) { frac = 0; } else if (d.frac - frac > 0.5) { frac = 1; }
-    d.frac = frac;
+  function setFromLevel(frac) {
     var ms = Math.round(frac * state.baseMs / MINUTE) * MINUTE;
     state.remainingMs = Math.min(state.baseMs, Math.max(MINUTE, ms));
     render();
   }
 
-  ringEl.addEventListener("pointerdown", function (e) {
+  timerViewEl.addEventListener("pointerdown", function (e) {
     if (state.mode !== "duration" || state.baseMs <= 0) { return; }
-    var p = ringFraction(e);
-    if (p.dist < 0.7 || p.dist > 1.2) { return; }   // nur auf dem Ring, nicht in der Mitte
+    if (e.target.closest && e.target.closest("button")) { return; }
+    var frac = state.remainingMs / state.baseMs;
+    var surfaceY = window.innerHeight * (1 - frac * MAX_LEVEL);
+    if (Math.abs(e.clientY - surfaceY) > GRAB) { return; }   // nur am Wasserspiegel
     e.preventDefault();
     var wasRunning = state.running;
     if (wasRunning) { stop(); }
-    var cur = state.baseMs > 0 ? state.remainingMs / state.baseMs : 0;
-    var start = p.frac;
-    if (cur - start > 0.5) { start = 1; }   // Griff steht oben bei „voll“
-    state.drag = { id: e.pointerId, wasRunning: wasRunning, frac: start };
+    state.drag = { id: e.pointerId, wasRunning: wasRunning };
     state.alertPending = false;
-    ringEl.classList.add("dragging");
-    if (ringEl.setPointerCapture) { ringEl.setPointerCapture(e.pointerId); }
-    setFromRing(start);
+    timerViewEl.classList.add("dragging");
+    if (timerViewEl.setPointerCapture) { timerViewEl.setPointerCapture(e.pointerId); }
   });
 
-  ringEl.addEventListener("pointermove", function (e) {
+  timerViewEl.addEventListener("pointermove", function (e) {
     if (!state.drag || e.pointerId !== state.drag.id) { return; }
     e.preventDefault();
-    setFromRing(ringFraction(e).frac);
+    setFromLevel(levelAt(e));
   });
 
   function endDrag(e) {
     if (!state.drag || e.pointerId !== state.drag.id) { return; }
     var wasRunning = state.drag.wasRunning;
     state.drag = null;
-    ringEl.classList.remove("dragging");
+    timerViewEl.classList.remove("dragging");
     if (wasRunning) {
       run();
     } else {
@@ -806,8 +891,8 @@
       render();
     }
   }
-  ringEl.addEventListener("pointerup", endDrag);
-  ringEl.addEventListener("pointercancel", endDrag);
+  timerViewEl.addEventListener("pointerup", endDrag);
+  timerViewEl.addEventListener("pointercancel", endDrag);
 
   // Nach Tab-Wechsel sofort korrekt aktualisieren
   document.addEventListener("visibilitychange", function () {
