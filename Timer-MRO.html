@@ -206,6 +206,103 @@
     opacity: 0.6;
     font-variant-numeric: tabular-nums;
   }
+  /* Aquarium: Framework-Meeresbewohner schwimmen im Wasser */
+  .fishtoggle {
+    right: 70px;
+    width: auto;
+    height: 44px;
+    padding: 0 12px;
+    border-radius: 22px;
+    font-size: 18px;
+    z-index: 5;
+  }
+  .fishtoggle.off { opacity: 0.45; }
+  .aquarium { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .aquarium.off { display: none; }
+  .sand {
+    position: absolute;
+    left: -5%;
+    right: -5%;
+    bottom: 0;
+    height: 6%;
+    border-radius: 50% 50% 0 0 / 40% 40% 0 0;
+    background: linear-gradient(#c2a26b, #8a6d3b);
+    opacity: 0.5;
+  }
+  .weed {
+    position: absolute;
+    bottom: 3%;
+    width: 12px;
+    border-radius: 6px 6px 0 0;
+    background: #15803d;
+    opacity: 0.6;
+    -webkit-transform-origin: bottom;
+    transform-origin: bottom;
+    -webkit-animation: sway 5s ease-in-out infinite alternate;
+    animation: sway 5s ease-in-out infinite alternate;
+  }
+  @-webkit-keyframes sway { from { -webkit-transform: rotate(-7deg); } to { -webkit-transform: rotate(7deg); } }
+  @keyframes sway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+  .gate {
+    position: absolute;
+    bottom: 6%;
+    width: 0;
+    border-left: 2px dashed rgba(255, 255, 255, 0.22);
+  }
+  .gate b {
+    position: absolute;
+    top: 4px;
+    left: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.45);
+  }
+  .critter {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: auto;
+    cursor: pointer;
+    will-change: transform;
+    transition: opacity 0.4s ease;
+  }
+  .critter .body { width: 100%; height: 100%; transition: transform 0.25s ease; }
+  .critter .body svg { display: block; width: 100%; height: 100%; }
+  .critter.left .body { -webkit-transform: scaleX(-1); transform: scaleX(-1); }
+  .critter.puffed .body { -webkit-transform: scale(1.45); transform: scale(1.45); }
+  .critter .say {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-bottom: 8px;
+    padding: 5px 10px;
+    border-radius: 11px;
+    background: #ffffff;
+    color: #0b1026;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    -webkit-transform: translateX(-50%) scale(0.6);
+    transform: translateX(-50%) scale(0.6);
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+  }
+  .critter .say.show { opacity: 1; -webkit-transform: translateX(-50%) scale(1); transform: translateX(-50%) scale(1); }
+  .critter .say::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border: 6px solid transparent;
+    border-top-color: #ffffff;
+    border-bottom: 0;
+  }
+
   .buttons-wrap {
     position: fixed;
     left: 0;
@@ -381,7 +478,76 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+ <!-- PRINCE2: Fisch mit Krone und Krawatte -->
+ <symbol id="sym-prince" viewBox="0 0 120 80">
+  <path d="M22 40 L2 22 L6 40 L2 58Z" fill="#f97316"/>
+  <ellipse cx="62" cy="42" rx="42" ry="24" fill="#fb923c"/>
+  <path d="M58 20 Q70 30 58 64" stroke="#ea580c" stroke-width="3" fill="none" opacity=".5"/>
+  <path d="M74 44 l6 4 -6 14 -6 -14z" fill="#1e3a8a"/><rect x="71" y="40" width="9" height="5" fill="#1e3a8a"/>
+  <path d="M72 18 l4 -12 6 8 6 -10 6 10 6 -8 2 12z" fill="#facc15" stroke="#a16207" stroke-width="1"/>
+  <circle cx="88" cy="36" r="6" fill="#fff"/><circle cx="90" cy="36" r="3" fill="#111"/>
+  <path d="M96 50 q4 3 8 0" stroke="#7c2d12" stroke-width="2" fill="none"/>
+ </symbol>
+ <!-- ITIL: Service-Desk-Fisch mit Headset -->
+ <symbol id="sym-itil" viewBox="0 0 120 80">
+  <path d="M24 40 L4 24 L8 40 L4 56Z" fill="#0891b2"/>
+  <ellipse cx="62" cy="40" rx="40" ry="22" fill="#22d3ee"/>
+  <path d="M40 22 Q62 30 84 22" stroke="#fff" stroke-width="2" fill="none" opacity=".5"/>
+  <circle cx="86" cy="34" r="6" fill="#fff"/><circle cx="88" cy="34" r="3" fill="#111"/>
+  <path d="M74 20 Q86 6 98 22" stroke="#111" stroke-width="3" fill="none"/><rect x="95" y="20" width="7" height="10" rx="3" fill="#111"/>
+  <path d="M100 30 Q104 44 94 48" stroke="#111" stroke-width="2" fill="none"/><circle cx="93" cy="48" r="3" fill="#111"/>
+  <path d="M90 48 q5 4 10 0" stroke="#155e75" stroke-width="2" fill="none"/>
+ </symbol>
+ <!-- Scrum: kleiner grüner Fisch -->
+ <symbol id="sym-scrum" viewBox="0 0 60 40">
+  <path d="M12 20 L1 11 L3 20 L1 29Z" fill="#16a34a"/>
+  <ellipse cx="32" cy="20" rx="20" ry="11" fill="#4ade80"/>
+  <circle cx="43" cy="17" r="3.5" fill="#fff"/><circle cx="44" cy="17" r="1.8" fill="#111"/>
+  <path d="M46 24 q3 2 5 0" stroke="#14532d" stroke-width="1.5" fill="none"/>
+ </symbol>
+ <!-- COBIT: alte Governance-Schildkröte mit Monokel -->
+ <symbol id="sym-cobit" viewBox="0 0 140 90">
+  <ellipse cx="34" cy="70" rx="12" ry="7" fill="#65a30d"/><ellipse cx="96" cy="72" rx="12" ry="7" fill="#65a30d"/>
+  <ellipse cx="22" cy="54" rx="10" ry="5" fill="#65a30d"/>
+  <ellipse cx="116" cy="48" rx="18" ry="14" fill="#84cc16"/>
+  <path d="M20 58 Q24 14 66 12 Q108 14 110 58Z" fill="#a16207"/>
+  <path d="M30 56 L44 30 L66 22 L88 30 L102 56 M44 30 L52 56 M88 30 L80 56 M66 22 L66 56" stroke="#713f12" stroke-width="3" fill="none"/>
+  <rect x="16" y="54" width="100" height="8" rx="4" fill="#854d0e"/>
+  <circle cx="122" cy="44" r="5" fill="#fff"/><circle cx="123" cy="44" r="2.5" fill="#111"/>
+  <circle cx="122" cy="44" r="7" fill="none" stroke="#facc15" stroke-width="2"/><path d="M128 48 L132 64" stroke="#facc15" stroke-width="1.5"/>
+  <path d="M120 54 q6 3 10 -1" stroke="#365314" stroke-width="2" fill="none"/>
+ </symbol>
+ <!-- ISO 27001: Kugelfisch mit Vorhängeschloss -->
+ <symbol id="sym-iso" viewBox="0 0 110 90">
+  <g stroke="#a16207" stroke-width="3" stroke-linecap="round">
+   <path d="M55 6 v-4 M30 14 l-4 -4 M80 14 l4 -4 M14 40 h-6 M96 40 h6 M24 66 l-4 4 M86 66 l4 4 M55 76 v6"/>
+  </g>
+  <path d="M18 44 L2 32 L4 44 L2 56Z" fill="#ca8a04"/>
+  <circle cx="55" cy="42" r="34" fill="#fde047"/>
+  <circle cx="72" cy="32" r="7" fill="#fff"/><circle cx="74" cy="32" r="3.5" fill="#111"/>
+  <path d="M50 50 h18 v14 h-18z" fill="#64748b"/><path d="M53 50 v-6 a6 6 0 0 1 12 0 v6" stroke="#64748b" stroke-width="3" fill="none"/>
+  <circle cx="59" cy="57" r="2" fill="#0f172a"/>
+  <path d="M80 46 q4 2 7 -1" stroke="#713f12" stroke-width="2" fill="none"/>
+ </symbol>
+ <!-- Bonus: Qualle Agile Coach -->
+ <symbol id="sym-jelly" viewBox="0 0 70 100">
+  <path d="M5 40 Q5 5 35 5 Q65 5 65 40 Q50 34 35 40 Q20 34 5 40Z" fill="#f0abfc" opacity=".85"/>
+  <path d="M15 40 q-4 20 4 40 M28 40 q4 25 -2 50 M42 40 q-4 25 2 50 M55 40 q4 20 -4 40" stroke="#e879f9" stroke-width="3" fill="none" opacity=".7"/>
+  <circle cx="26" cy="24" r="3" fill="#111"/><circle cx="44" cy="24" r="3" fill="#111"/><path d="M28 31 q7 5 14 0" stroke="#111" stroke-width="2" fill="none"/>
+ </symbol>
+ <!-- Bonus: Krabbe Auditor -->
+ <symbol id="sym-crab" viewBox="0 0 120 70">
+  <g stroke="#b91c1c" stroke-width="4" stroke-linecap="round"><path d="M30 50 l-14 12 M38 54 l-8 12 M90 50 l14 12 M82 54 l8 12"/></g>
+  <ellipse cx="60" cy="44" rx="34" ry="18" fill="#ef4444"/>
+  <path d="M30 36 Q14 26 16 12" stroke="#ef4444" stroke-width="6" fill="none"/><circle cx="16" cy="10" r="9" fill="#ef4444"/>
+  <path d="M90 36 Q104 22 100 14" stroke="#ef4444" stroke-width="6" fill="none"/>
+  <rect x="92" y="0" width="18" height="22" rx="2" fill="#f8fafc" stroke="#475569"/><path d="M96 7 h10 M96 12 h10 M96 17 h6" stroke="#475569" stroke-width="1.5"/>
+  <path d="M52 30 v-10 M68 30 v-10" stroke="#ef4444" stroke-width="3"/><circle cx="52" cy="18" r="5" fill="#fff"/><circle cx="68" cy="18" r="5" fill="#fff"/><circle cx="53" cy="18" r="2.5" fill="#111"/><circle cx="69" cy="18" r="2.5" fill="#111"/>
+ </symbol>
+</defs></svg>
 <div class="view" id="timerView">
+  <button type="button" class="corner fishtoggle" id="btnFish" aria-label="Aquarium an/aus" aria-pressed="true">&#128031;</button>
   <button type="button" class="corner gear" id="btnSetup" aria-label="Einstellungen">&#9881;&#xFE0E;</button>
 
   <div class="water" aria-hidden="true">
@@ -397,6 +563,16 @@
   <div class="scale" aria-hidden="true"></div>
   <div class="mark" id="mark">100 %</div>
   <div class="handle" id="handle"></div>
+
+  <div class="aquarium" id="aquarium">
+    <div class="sand"></div>
+    <div class="weed" style="left:5%;height:15%"></div>
+    <div class="weed" style="left:7%;height:10%;animation-delay:-2s;-webkit-animation-delay:-2s"></div>
+    <div class="weed" style="left:89%;height:13%;animation-delay:-1s;-webkit-animation-delay:-1s"></div>
+    <div class="weed" style="left:91.5%;height:8%;animation-delay:-3s;-webkit-animation-delay:-3s"></div>
+    <div class="gate" id="gate1"><b>STAGE GATE</b></div>
+    <div class="gate" id="gate2"><b>STAGE GATE</b></div>
+  </div>
 
   <div class="readout above">
     <div class="display" id="display">01:30:00</div>
@@ -860,7 +1036,7 @@
 
   timerViewEl.addEventListener("pointerdown", function (e) {
     if (state.mode !== "duration" || state.baseMs <= 0) { return; }
-    if (e.target.closest && e.target.closest("button")) { return; }
+    if (e.target.closest && e.target.closest("button, .critter")) { return; }
     var frac = state.remainingMs / state.baseMs;
     var surfaceY = window.innerHeight * (1 - frac * MAX_LEVEL);
     if (Math.abs(e.clientY - surfaceY) > GRAB) { return; }   // nur am Wasserspiegel
@@ -900,6 +1076,215 @@
   });
   window.addEventListener("pageshow", wake);
   window.addEventListener("focus", wake);
+
+  // Aquarium: Framework-Bewohner schwimmen im Wasser (nur Optik, beeinflusst den Timer nicht)
+  var aquariumEl = document.getElementById("aquarium");
+  var btnFish = document.getElementById("btnFish");
+  var gate1El = document.getElementById("gate1");
+  var gate2El = document.getElementById("gate2");
+  var buttonsWrapEl = document.querySelector(".buttons-wrap");
+  var reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var KINDS = [
+    { sym: "prince", w: 110, h: 74, depth: 0.15, speed: 45, gates: true,
+      lines: ["Warte auf Freigabe vom Lenkungsausschuss …", "Business Case noch gültig?", "Stage 3 von 7 erreicht."],
+      urgent: "Ausnahmebericht!" },
+    { sym: "itil", w: 110, h: 74, depth: 0.5, speed: 60, ticket: true,
+      lines: ["Bitte über den Service Desk!", "Incident oder Problem?", "SLA läuft …"] },
+    { sym: "iso", w: 84, h: 70, depth: 0.3, speed: 32, puff: true,
+      lines: ["Zugriff verweigert 🔒", "Need-to-know!", "Risiko bewertet."] },
+    { sym: "jelly", w: 46, h: 66, depth: 0.05, speed: 10,
+      lines: ["Wie fühlt ihr euch damit?", "Fail fast!", "Was hat gut geklappt?"] },
+    { sym: "cobit", w: 120, h: 78, ground: 6, speed: 14,
+      lines: ["Erst die Governance klären.", "Wer ist accountable?", "Steht das im Rahmenwerk?"] },
+    { sym: "crab", w: 80, h: 48, ground: 2, speed: 22, crab: true,
+      lines: ["Finding notiert.", "Wo ist der Nachweis?", "Das gibt eine Abweichung."] }
+  ];
+  var SCRUM = { sym: "scrum", w: 46, h: 30, depth: 0.72, speed: 70,
+    lines: ["Sprint läuft!", "Done ist done.", "Daily in 2 Minuten!"], urgent: "Deadline!" };
+
+  var critters = [];
+  var aqua = { on: true, ticket: 4711, lastTalk: 0, last: 0, dailyUntil: 0, nextDaily: 0, sprintUntil: 0 };
+
+  function makeCritter(kind, extra) {
+    var el = document.createElement("div");
+    el.className = "critter";
+    el.innerHTML = '<div class="body"><svg viewBox="0 0 ' + kind.w + " " + kind.h + '"><use href="#sym-' + kind.sym + '" xlink:href="#sym-' + kind.sym + '"/></svg></div><div class="say"></div>';
+    aquariumEl.appendChild(el);
+    var c = {
+      kind: kind, el: el, sayEl: el.lastChild,
+      x: Math.random() * window.innerWidth, dir: Math.random() < 0.5 ? -1 : 1,
+      phase: Math.random() * 6.28, sayUntil: 0, waitUntil: 0, gateX: -1, puffUntil: 0,
+      offX: 0, offY: 0, leader: null
+    };
+    if (extra) { for (var k in extra) { c[k] = extra[k]; } }
+    el.addEventListener("click", function () { poke(c); });
+    critters.push(c);
+    return c;
+  }
+
+  function say(c, text, ms) {
+    c.sayEl.textContent = text;
+    c.sayEl.classList.add("show");
+    c.sayUntil = performance.now() + (ms || 3000);
+  }
+
+  function poke(c) {
+    var k = c.kind;
+    if (k.ticket) {
+      aqua.ticket += 1;
+      say(c, "Ticket #" + aqua.ticket + " angelegt.");
+    } else if (k.puff) {
+      c.puffUntil = performance.now() + 2500;
+      say(c, "Zugriff verweigert 🔒", 2500);
+    } else {
+      say(c, k.lines[Math.floor(Math.random() * k.lines.length)]);
+    }
+  }
+
+  function buildAquarium() {
+    KINDS.forEach(function (k) { makeCritter(k); });
+    var lead = makeCritter(SCRUM);
+    for (var i = 1; i < 5; i++) {
+      makeCritter(SCRUM, { leader: lead, offX: -i * 40, offY: (i % 2 ? 12 : -10) });
+    }
+  }
+
+  function setAquarium(on) {
+    aqua.on = on;
+    aquariumEl.classList.toggle("off", !on);
+    btnFish.classList.toggle("off", !on);
+    btnFish.setAttribute("aria-pressed", on ? "true" : "false");
+    try { localStorage.setItem("timer-mro-aquarium", on ? "1" : "0"); } catch (err) { /* ohne Speicher */ }
+  }
+
+  btnFish.addEventListener("click", function () { setAquarium(!aqua.on); });
+
+  function animateAquarium(now) {
+    requestAnimationFrame(animateAquarium);
+    var dt = Math.min(0.1, (now - (aqua.last || now)) / 1000);
+    aqua.last = now;
+    if (!aqua.on || document.hidden || document.body.classList.contains("setup")) { return; }
+
+    var W = window.innerWidth;
+    var H = window.innerHeight;
+    var scale = Math.max(0.6, Math.min(1.1, Math.min(W, H) / 820));
+    var frac = state.baseMs > 0 ? Math.min(1, Math.max(0, state.remainingMs / state.baseMs)) : 0;
+    var done = state.remainingMs <= 0;
+    var waterTop = H * (1 - frac * MAX_LEVEL);
+    var floor = H * 0.97;
+    // bei niedrigem Pegel werden alle kleiner und rücken zusammen
+    if (!done) { scale *= Math.max(0.45, Math.min(1, (floor - waterTop) / (H * 0.35))); }
+    var moving = state.running && !reducedMotion;
+    var urgent = state.running && frac < 0.1;
+    var tempo = urgent ? 2.6 : 1;
+
+    // Stage Gates für den PRINCE2-Fisch
+    var g1 = W / 3, g2 = W * 2 / 3;
+    var meetY = buttonsWrapEl.getBoundingClientRect().top - 50;
+    gate1El.style.left = g1 + "px";
+    gate2El.style.left = g2 + "px";
+    gate1El.style.top = gate2El.style.top = (waterTop + 30) + "px";
+    gate1El.style.display = gate2El.style.display = (done || floor - waterTop < 140) ? "none" : "";
+
+    // Scrum: Sprints und regelmäßiges Daily
+    if (moving && now > aqua.nextDaily) {
+      aqua.dailyUntil = now + 4000;
+      aqua.nextDaily = now + 30000 + Math.random() * 15000;
+      say(critters[KINDS.length], "Daily!", 3000);
+    }
+    var daily = moving && now < aqua.dailyUntil;
+
+    // Sprechblasen: ab und zu sagt jemand etwas (nur während der Timer läuft)
+    if (state.running && now - aqua.lastTalk > (urgent ? 3500 : 9000)) {
+      aqua.lastTalk = now;
+      var c0 = critters[Math.floor(Math.random() * (KINDS.length + 1))];
+      say(c0, urgent && c0.kind.urgent ? c0.kind.urgent : c0.kind.lines[Math.floor(Math.random() * c0.kind.lines.length)]);
+    }
+
+    for (var i = 0; i < critters.length; i++) {
+      var c = critters[i];
+      var k = c.kind;
+      var w = k.w * scale, h = k.h * scale;
+      c.el.style.width = w + "px";
+      c.el.style.height = h + "px";
+      var y;
+
+      if (done) {
+        // Lessons-Learned-Runde: alle versammeln sich über den Buttons
+        var slot = (i + 0.5) / critters.length;
+        c.x += (W * (0.1 + slot * 0.8) - w / 2 - c.x) * Math.min(1, dt * 2);
+        y = meetY - h + Math.sin(now / 700 + i) * 4;
+        if (k.crab && now > c.sayUntil) { say(c, "Lessons Learned!", 4000); }
+      } else if (c.leader) {
+        // Scrum-Schwarm folgt dem Teamleiter
+        var L = c.leader;
+        var tx = daily ? L.x + Math.cos(now / 400 + i) * 34 : L.x + c.offX * L.dir;
+        c.x += (tx - c.x) * Math.min(1, dt * 4);
+        c.dir = L.dir;
+        y = L.y + (daily ? Math.sin(now / 400 + i) * 24 : c.offY);
+      } else {
+        var v = 0;
+        if (moving) {
+          v = k.speed * scale * tempo;
+          if (k.sym === "scrum") {
+            if (daily) { v = 0; }
+            else {
+              if (now > aqua.sprintUntil + 2500) { aqua.sprintUntil = now + 4000; }
+              v *= now < aqua.sprintUntil ? 1.8 : 0.4;
+            }
+          }
+          if (k.gates) {
+            // am Stage Gate anhalten und auf Freigabe warten
+            var gx = c.dir > 0 ? (c.x + w < g1 ? g1 : c.x + w < g2 ? g2 : -1) : (c.x > g2 ? g2 : c.x > g1 ? g1 : -1);
+            var nose = c.dir > 0 ? c.x + w : c.x;
+            if (now < c.waitUntil) { v = 0; }
+            else if (gx > 0 && Math.abs(nose - gx) < 3 && c.gateX !== gx) {
+              c.gateX = gx;
+              c.waitUntil = now + 3500;
+              if (!urgent) { say(c, "Warte auf Freigabe …", 3200); }
+              v = 0;
+            }
+          }
+        }
+        c.x += v * c.dir * dt;
+        if (c.x > W - w * 0.2) { c.dir = -1; c.gateX = -1; }
+        if (c.x < -w * 0.8) { c.dir = 1; c.gateX = -1; }
+        if (k.ground !== undefined) {
+          y = floor - h - k.ground;
+        } else {
+          var top = waterTop + 34, bottom = floor - h - 40;
+          y = top + Math.max(0, bottom - top) * k.depth;
+        }
+        if (!reducedMotion) { y += Math.sin(now / 900 + c.phase) * (k.sym === "jelly" ? 14 : 5) * scale; }
+        c.y = y;
+      }
+
+      c.el.classList.toggle("left", c.dir < 0 && !k.crab);
+      c.el.classList.toggle("puffed", now < c.puffUntil);
+      // Bewohner nur im Wasser zeigen (bei Ablauf als Runde am Boden)
+      c.el.style.opacity = done || y > waterTop + 10 ? "1" : "0";
+      c.el.style.transform = "translate3d(" + c.x.toFixed(1) + "px," + y.toFixed(1) + "px,0)";
+      if (c.sayUntil) {
+        // Sprechblase im Bild halten
+        var bw = c.sayEl.offsetWidth;
+        var center = Math.min(W - bw / 2 - 8, Math.max(bw / 2 + 8, c.x + w / 2));
+        c.sayEl.style.left = (center - c.x) + "px";
+      }
+      if (c.sayUntil && now > c.sayUntil) {
+        c.sayEl.classList.remove("show");
+        c.sayUntil = 0;
+      }
+    }
+  }
+
+  buildAquarium();
+  (function () {
+    var on = true;
+    try { on = localStorage.getItem("timer-mro-aquarium") !== "0"; } catch (err) { /* ohne Speicher */ }
+    setAquarium(on);
+  })();
+  requestAnimationFrame(animateAquarium);
 
   buildList();
   render();
