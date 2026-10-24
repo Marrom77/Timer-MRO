@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Timer-MRO">
 <meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#1e1b4b">
+<meta name="theme-color" content="#0f0b2e">
 <title>Timer-MRO</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -26,8 +26,9 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: #ffffff;
-    background: #1e1b4b;
-    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 45%, #0ea5e9 100%);
+    background: #0f0b2e;
+    background: radial-gradient(circle at 50% 35%, #312e81 0%, #0f0b2e 70%);
+    background-attachment: fixed;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -43,29 +44,51 @@
     user-select: none;
   }
   .panel {
-    width: 94vw;
-    max-width: 1400px;
-    margin: 2vh 0;
-    padding: 4vh 3vw;
-    border-radius: 32px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.28);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-    -webkit-backdrop-filter: blur(18px);
-    backdrop-filter: blur(18px);
+    width: 100%;
+    padding: 3vh 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3vh;
+    gap: 2vh;
+  }
+  /* Ringgröße: passt sich Höhe und Breite an (Bedienung immer darunter) */
+  .ring {
+    --size: min(56vh, 80vw);
+    --size: min(56dvh, 80vw);
+    position: relative;
+    width: var(--size);
+    height: var(--size);
+    margin-bottom: 1vh;
+  }
+  .ring svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+  }
+  .ring .track { stroke: rgba(255, 255, 255, 0.08); }
+  .ring .bar {
+    -webkit-filter: drop-shadow(0 0 3px #a855f7);
+    filter: drop-shadow(0 0 3px #a855f7);
+    transition: stroke-dashoffset 0.25s linear;
+  }
+  .ring .bar.empty { opacity: 0; }
+  .ring-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   .display {
-    font-size: 18vw;
-    font-weight: 700;
+    font-size: calc(var(--size) * 0.17);
+    font-weight: 200;
     line-height: 1;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.01em;
     font-variant-numeric: tabular-nums;
     text-align: center;
-    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
     white-space: nowrap;
   }
   .display.done { color: #fecaca; }
@@ -128,6 +151,7 @@
     z-index: 10;
   }
   .list.open { display: block; }
+  .list.up { top: auto; bottom: calc(100% + 8px); }
   .list li {
     font-size: 26px;
     padding: 14px 18px;
@@ -163,8 +187,9 @@
   .picker.clock .toggle, .picker.clock .list { display: none; }
   .info {
     min-height: 1.4em;
-    font-size: 20px;
-    color: rgba(255, 255, 255, 0.85);
+    margin-top: calc(var(--size) * 0.03);
+    font-size: max(15px, calc(var(--size) * 0.042));
+    color: #a5b4fc;
     text-align: center;
   }
   .error {
@@ -173,6 +198,7 @@
     color: #fecaca;
     text-align: center;
   }
+  .error:empty { display: none; }
   .buttons {
     display: flex;
     flex-wrap: wrap;
@@ -206,7 +232,22 @@
 </head>
 <body>
 <div class="panel">
-  <div class="display" id="display">01:30:00</div>
+  <div class="ring">
+    <svg viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#22d3ee"/>
+          <stop offset="1" stop-color="#a855f7"/>
+        </linearGradient>
+      </defs>
+      <circle class="track" cx="50" cy="50" r="45" fill="none" stroke-width="4"/>
+      <circle class="bar" id="ringBar" cx="50" cy="50" r="45" fill="none" stroke="url(#ringGrad)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/>
+    </svg>
+    <div class="ring-center">
+      <div class="display" id="display">01:30:00</div>
+      <div class="info" id="info"></div>
+    </div>
+  </div>
 
   <div class="modes" role="group" aria-label="Modus">
     <button type="button" id="modeDuration" class="active">Dauer</button>
@@ -219,7 +260,6 @@
     <ul class="list" id="list" role="listbox"></ul>
   </div>
 
-  <div class="info" id="info"></div>
   <div class="error" id="error" role="alert"></div>
 
   <div class="buttons">
@@ -252,6 +292,7 @@
   var modeDurationEl = document.getElementById("modeDuration");
   var modeClockEl = document.getElementById("modeClock");
   var infoEl = document.getElementById("info");
+  var ringBarEl = document.getElementById("ringBar");
 
   var state = {
     baseMs: parseTime(DEFAULT_TIME),
@@ -263,7 +304,8 @@
     mode: "duration",
     target: 0,
     clock: null,
-    values: { duration: DEFAULT_TIME, clock: "" }
+    values: { duration: DEFAULT_TIME, clock: "" },
+    targetText: ""
   };
 
   function parseTime(text) {
@@ -298,7 +340,7 @@
   function setTarget(clock) {
     state.clock = clock;
     state.target = nextTarget(clock);
-    infoEl.textContent = "Ziel: " + pad(clock.h) + ":" + pad(clock.m) + " Uhr (" + (isTomorrow(state.target) ? "morgen" : "heute") + ")";
+    state.targetText = "Ziel: " + pad(clock.h) + ":" + pad(clock.m) + " Uhr (" + (isTomorrow(state.target) ? "morgen" : "heute") + ")";
   }
 
   function pad(n) {
@@ -313,9 +355,25 @@
     return pad(h) + ":" + pad(m) + ":" + pad(s);
   }
 
+  function infoText() {
+    if (state.remainingMs <= 0) { return "Zeit abgelaufen"; }
+    if (state.mode === "clock") { return state.targetText; }
+    if (state.running) {
+      var end = new Date(state.endTime);
+      return "Ende um " + pad(end.getHours()) + ":" + pad(end.getMinutes()) + " Uhr";
+    }
+    return "";
+  }
+
   function render() {
     displayEl.textContent = format(state.remainingMs);
     displayEl.classList.toggle("done", state.remainingMs <= 0);
+    // Ring: Anteil der verbleibenden Zeit
+    var frac = state.baseMs > 0 ? Math.min(1, Math.max(0, state.remainingMs / state.baseMs)) : 0;
+    ringBarEl.setAttribute("stroke-dashoffset", String(100 * (1 - frac)));
+    ringBarEl.classList.toggle("empty", frac <= 0);
+    var info = infoText();
+    if (infoEl.textContent !== info) { infoEl.textContent = info; }
     btnStop.disabled = !state.running;
     btnResume.disabled = state.running || state.remainingMs <= 0 || state.remainingMs >= state.baseMs;
   }
@@ -452,7 +510,7 @@
     pickerEl.classList.toggle("clock", clockMode);
     inputEl.placeholder = clockMode ? "HH:MM" : "H:MM";
     inputEl.setAttribute("aria-label", clockMode ? "Zielzeit (HH:MM)" : "Zeit (H:MM)");
-    infoEl.textContent = "";
+    state.targetText = "";
     inputEl.value = state.values[mode] || (clockMode ? defaultClock() : DEFAULT_TIME);
     applyInput();
   }
@@ -478,6 +536,10 @@
     for (var i = 0; i < items.length; i++) {
       items[i].classList.toggle("active", items[i].getAttribute("data-value") === inputEl.value.trim());
     }
+    // Nach oben öffnen, wenn unten zu wenig Platz ist
+    var r = pickerEl.getBoundingClientRect();
+    var below = window.innerHeight - r.bottom;
+    listEl.classList.toggle("up", below < 260 && r.top > below);
     listEl.classList.add("open");
   }
 
