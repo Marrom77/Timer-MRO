@@ -734,7 +734,7 @@
   // PWA: Service Worker nur über http(s) registrieren (bei file:// läuft die App ohne)
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener("load", function () {
-      navigator.serviceWorker.register("sw.js").catch(function () {});
+      navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(function () {});
     });
   }
 })();

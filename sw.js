@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var CACHE = "timer-mro-v5";
+  var CACHE = "timer-mro-v6";
   var ASSETS = [
     "./",
     "./index.html",
@@ -36,9 +36,29 @@
     );
   });
 
-  // Cache-first: alles aus dem Cache, nur Unbekanntes aus dem Netz
+  // Seiten: zuerst Netz (Updates sofort sichtbar), offline aus dem Cache
+  function networkFirst(request) {
+    return fetch(request, { cache: "no-store" }).then(function (res) {
+      if (res && res.ok) {
+        var copy = res.clone();
+        caches.open(CACHE).then(function (cache) { cache.put(request, copy); });
+      }
+      return res;
+    }).catch(function () {
+      return caches.match(request, { ignoreSearch: true }).then(function (hit) {
+        return hit || caches.match("./Timer-MRO.html");
+      });
+    });
+  }
+
+  // Übrige Dateien: Cache-first, nur Unbekanntes aus dem Netz
   self.addEventListener("fetch", function (event) {
     if (event.request.method !== "GET") { return; }
+    var url = new URL(event.request.url);
+    if (event.request.mode === "navigate" || /\.html$/.test(url.pathname) || /\/$/.test(url.pathname)) {
+      event.respondWith(networkFirst(event.request));
+      return;
+    }
     event.respondWith(
       caches.match(event.request, { ignoreSearch: true }).then(function (hit) {
         if (hit) { return hit; }
