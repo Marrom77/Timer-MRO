@@ -95,9 +95,20 @@
     transition: stroke-dashoffset 0.25s linear;
   }
   .ring .bar.empty { opacity: 0; }
+  .ring.dragging .bar { transition: none; }
+  /* Griff zum Ziehen: klein, nur leicht heller als der Bogen */
+  .ring .knob {
+    fill: rgba(255, 255, 255, 0.85);
+    transition: opacity 0.2s ease;
+  }
+  .ring.dragging .knob { fill: #ffffff; }
+  .ring .knob.hidden { opacity: 0; }
+  .ring.adjustable svg { touch-action: none; cursor: grab; }
+  .ring.dragging svg { cursor: grabbing; }
   .ring-center {
     position: absolute;
     inset: 0;
+    pointer-events: none;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -292,7 +303,7 @@
 <div class="view" id="timerView">
   <button type="button" class="corner gear" id="btnSetup" aria-label="Einstellungen">&#9881;&#xFE0E;</button>
 
-  <div class="ring">
+  <div class="ring" id="ring">
     <svg viewBox="0 0 100 100" aria-hidden="true">
       <defs>
         <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
@@ -302,6 +313,7 @@
       </defs>
       <circle class="track" cx="50" cy="50" r="45" fill="none" stroke-width="4"/>
       <circle class="bar" id="ringBar" cx="50" cy="50" r="45" fill="none" stroke="url(#ringGrad)" stroke-width="4" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/>
+      <circle class="knob" id="ringKnob" cx="95" cy="50" r="1.6"/>
     </svg>
     <div class="ring-center">
       <div class="display" id="display">01:30:00</div>
@@ -370,6 +382,8 @@
   var infoEl = document.getElementById("info");
   var presetEl = document.getElementById("preset");
   var ringBarEl = document.getElementById("ringBar");
+  var ringEl = document.getElementById("ring");
+  var ringKnobEl = document.getElementById("ringKnob");
 
   var state = {
     baseMs: parseTime(DEFAULT_TIME),
@@ -383,7 +397,9 @@
     clock: null,
     values: { duration: DEFAULT_TIME, clock: "" },
     targetText: "",
-    draftMode: "duration"
+    draftMode: "duration",
+    adjusted: false,
+    drag: null
   };
 
   function parseTime(text) {
@@ -460,6 +476,13 @@
     var frac = state.baseMs > 0 ? Math.min(1, Math.max(0, state.remainingMs / state.baseMs)) : 0;
     ringBarEl.setAttribute("stroke-dashoffset", String(100 * (1 - frac)));
     ringBarEl.classList.toggle("empty", frac <= 0);
+    // Griff am Ende des Bogens (SVG ist um -90° gedreht, 0 = oben)
+    var a = frac * 2 * Math.PI;
+    ringKnobEl.setAttribute("cx", (50 + 45 * Math.cos(a)).toFixed(2));
+    ringKnobEl.setAttribute("cy", (50 + 45 * Math.sin(a)).toFixed(2));
+    var adjustable = state.mode === "duration" && state.baseMs > 0;
+    ringEl.classList.toggle("adjustable", adjustable);
+    ringKnobEl.classList.toggle("hidden", !adjustable || frac <= 0);
     var info = infoText();
     if (infoEl.textContent !== info) { infoEl.textContent = info; }
     var preset = (state.mode === "clock" ? "Uhrzeit " : "Dauer ") + state.values[state.mode];
@@ -541,7 +564,9 @@
   function start() {
     clearTick();
     state.running = false;
-    rearm();
+    // Am Ring eingestellte Restzeit gilt für den nächsten Start
+    if (!state.adjusted || state.remainingMs <= 0) { rearm(); }
+    state.adjusted = false;
     run();
   }
 
@@ -554,6 +579,7 @@
     clearTick();
     state.alertPending = false;
     state.running = false;
+    state.adjusted = false;
     rearm();
     render();
   }
@@ -636,6 +662,7 @@
     state.alertPending = false;
     state.baseMs = ms;
     state.remainingMs = ms;
+    state.adjusted = false;
     render();
     closeSetup();
   }
@@ -720,6 +747,67 @@
   btnStop.addEventListener("click", stop);
   btnResume.addEventListener("click", resume);
   btnReset.addEventListener("click", reset);
+
+  // Restzeit am Ring ziehen (nur Modus Dauer): Minutenschritte, max. Ausgangszeit
+  var MINUTE = 60000;
+
+  function ringFraction(e) {
+    var r = ringEl.getBoundingClientRect();
+    var dx = e.clientX - (r.left + r.width / 2);
+    var dy = e.clientY - (r.top + r.height / 2);
+    var dist = Math.sqrt(dx * dx + dy * dy) / (r.width / 2);
+    var angle = Math.atan2(dx, -dy);
+    if (angle < 0) { angle += 2 * Math.PI; }
+    return { frac: angle / (2 * Math.PI), dist: dist };
+  }
+
+  function setFromRing(frac) {
+    var d = state.drag;
+    // kein Sprung über 12 Uhr hinweg: am Anfang bzw. Ende festhalten
+    if (frac - d.frac > 0.5) { frac = 0; } else if (d.frac - frac > 0.5) { frac = 1; }
+    d.frac = frac;
+    var ms = Math.round(frac * state.baseMs / MINUTE) * MINUTE;
+    state.remainingMs = Math.min(state.baseMs, Math.max(MINUTE, ms));
+    render();
+  }
+
+  ringEl.addEventListener("pointerdown", function (e) {
+    if (state.mode !== "duration" || state.baseMs <= 0) { return; }
+    var p = ringFraction(e);
+    if (p.dist < 0.7 || p.dist > 1.2) { return; }   // nur auf dem Ring, nicht in der Mitte
+    e.preventDefault();
+    var wasRunning = state.running;
+    if (wasRunning) { stop(); }
+    var cur = state.baseMs > 0 ? state.remainingMs / state.baseMs : 0;
+    var start = p.frac;
+    if (cur - start > 0.5) { start = 1; }   // Griff steht oben bei „voll“
+    state.drag = { id: e.pointerId, wasRunning: wasRunning, frac: start };
+    state.alertPending = false;
+    ringEl.classList.add("dragging");
+    if (ringEl.setPointerCapture) { ringEl.setPointerCapture(e.pointerId); }
+    setFromRing(start);
+  });
+
+  ringEl.addEventListener("pointermove", function (e) {
+    if (!state.drag || e.pointerId !== state.drag.id) { return; }
+    e.preventDefault();
+    setFromRing(ringFraction(e).frac);
+  });
+
+  function endDrag(e) {
+    if (!state.drag || e.pointerId !== state.drag.id) { return; }
+    var wasRunning = state.drag.wasRunning;
+    state.drag = null;
+    ringEl.classList.remove("dragging");
+    if (wasRunning) {
+      run();
+    } else {
+      state.adjusted = true;
+      render();
+    }
+  }
+  ringEl.addEventListener("pointerup", endDrag);
+  ringEl.addEventListener("pointercancel", endDrag);
 
   // Nach Tab-Wechsel sofort korrekt aktualisieren
   document.addEventListener("visibilitychange", function () {
