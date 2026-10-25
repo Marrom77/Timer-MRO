@@ -283,22 +283,28 @@
   .clam .puff { left: 50%; animation-duration: 8s; }
   .clam .puff:nth-of-type(2) { animation-delay: -0.4s; }
   .clam .puff:nth-of-type(3) { animation-delay: -0.8s; }
-  /* Begriffe: Buchstaben fliegen ein, setzen sich zusammen, schweben schräg und lösen sich auf */
+  /* Begriffe: goldene Buchstaben wirbeln herein, setzen sich zusammen, das Wort fliegt über den Horizont davon */
   .fword {
     position: absolute;
     left: 0;
     top: 0;
     white-space: nowrap;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 0.08em;
-    color: #e2e8f0;
-    text-shadow: 0 0 14px rgba(125, 211, 252, 0.55), 0 2px 8px rgba(11, 16, 38, 0.5);
-    transition: transform 6s ease-in-out, opacity 2s ease, filter 2s ease;
+    -webkit-filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.55)) drop-shadow(0 2px 4px rgba(11, 16, 38, 0.5));
+    filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.55)) drop-shadow(0 2px 4px rgba(11, 16, 38, 0.5));
+    transition: transform 5s ease-in-out, opacity 2.6s ease-in;
   }
-  .fword span { display: inline-block; transition: transform 2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.2s ease; }
-  .fword.gone { opacity: 0; filter: blur(3px); }
-  .wbub { position: absolute; border: 1.5px solid rgba(255, 255, 255, 0.7); border-radius: 50%; animation: wbub 2.4s ease-out forwards; }
-  @keyframes wbub { from { transform: translateY(0); opacity: 0.9; } to { transform: translateY(-80px); opacity: 0; } }
+  .fword.away { transition: transform 2.8s cubic-bezier(0.5, 0, 0.8, 0.4), opacity 2.6s ease-in; opacity: 0; }
+  .fword span {
+    display: inline-block;
+    color: #fbbf24;
+    background: linear-gradient(180deg, #fef3c7 0%, #fcd34d 35%, #f59e0b 65%, #b45309 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    transition: transform 2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.2s ease;
+  }
   .critter {
     position: absolute;
     left: 0;
@@ -1234,31 +1240,22 @@
       sp.style.opacity = "1";
       sp.style.transform = "translate(0,0) rotate(0deg)";
     });
-    // 2. schweben von links oben nach rechts unten
+    // 2. schweben schräg nach rechts unten, aber nur bis knapp über die Uhrzeit (nicht hindurch)
+    var x1, y1, wr;
     setTimeout(function () {
-      // schräg nach rechts unten, aber nur bis knapp über die Uhrzeit (nicht hindurch)
-      var wr = word.getBoundingClientRect(), dr = displayEl.getBoundingClientRect();
-      var x1 = Math.max(x0, W - wr.width - W * 0.08);
-      var y1 = Math.max(y0, dr.top - wr.height - 12);
-      word.style.transform = "translate(" + x1.toFixed(0) + "px," + y1.toFixed(0) + "px) rotate(4deg)";
+      var dr = displayEl.getBoundingClientRect();
+      wr = word.getBoundingClientRect();
+      x1 = Math.max(x0, W - wr.width - W * 0.08);
+      y1 = Math.max(y0, dr.top - wr.height - 12);
+      x1 = x0 + (x1 - x0) * 0.6;
+      word.style.transform = "translate(" + x1.toFixed(0) + "px," + y1.toFixed(0) + "px) rotate(3deg)";
     }, 2800);
-    // 3. lösen sich in Blasen auf
+    // 3. als ganzes Wort über den Horizont davonfliegen
     setTimeout(function () {
-      word.classList.add("gone");
-      var r = word.getBoundingClientRect();
-      for (var i = 0; i < 6; i++) {
-        var b = document.createElement("div");
-        var size = rand(6, 16);
-        b.className = "wbub";
-        b.style.width = b.style.height = size + "px";
-        b.style.left = (r.left + rand(0, r.width)) + "px";
-        b.style.top = (r.top + rand(0, r.height)) + "px";
-        b.style.animationDelay = rand(0, 0.6) + "s";
-        aquariumEl.appendChild(b);
-        setTimeout(function (el) { return function () { el.remove(); }; }(b), 3200);
-      }
-    }, 8800);
-    setTimeout(function () { word.remove(); }, 11000);
+      word.classList.add("away");
+      word.style.transform = "translate(" + (x1 + W * 0.25).toFixed(0) + "px," + (-wr.height * 2).toFixed(0) + "px) rotate(-4deg) scale(0.45)";
+    }, 8000);
+    setTimeout(function () { word.remove(); }, 11200);
   }
 
   function scheduleWord() {
