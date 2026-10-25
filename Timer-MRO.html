@@ -283,6 +283,22 @@
   .clam .puff { left: 50%; animation-duration: 8s; }
   .clam .puff:nth-of-type(2) { animation-delay: -0.4s; }
   .clam .puff:nth-of-type(3) { animation-delay: -0.8s; }
+  /* Begriffe: Buchstaben fliegen ein, setzen sich zusammen, schweben schräg und lösen sich auf */
+  .fword {
+    position: absolute;
+    left: 0;
+    top: 0;
+    white-space: nowrap;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #e2e8f0;
+    text-shadow: 0 0 14px rgba(125, 211, 252, 0.55), 0 2px 8px rgba(11, 16, 38, 0.5);
+    transition: transform 6s ease-in-out, opacity 2s ease, filter 2s ease;
+  }
+  .fword span { display: inline-block; transition: transform 2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.2s ease; }
+  .fword.gone { opacity: 0; filter: blur(3px); }
+  .wbub { position: absolute; border: 1.5px solid rgba(255, 255, 255, 0.7); border-radius: 50%; animation: wbub 2.4s ease-out forwards; }
+  @keyframes wbub { from { transform: translateY(0); opacity: 0.9; } to { transform: translateY(-80px); opacity: 0; } }
   .critter {
     position: absolute;
     left: 0;
@@ -1140,6 +1156,9 @@
     // bei niedrigem Pegel werden die Fische kleiner
     scale *= Math.max(0.45, Math.min(1, (floor - waterTop) / (H * 0.35)));
     var tempo = state.running ? 1 : 0.7;
+    // Bereich der Uhrzeit (mit Rand): Tiere schwimmen drumherum, nicht hindurch
+    var dr = displayEl.getBoundingClientRect(), pr = presetEl.getBoundingClientRect();
+    var avoid = { left: dr.left - 20, right: dr.right + 20, top: dr.top - 14, bottom: Math.max(dr.bottom, pr.height ? pr.bottom : 0) + 14 };
 
     for (var i = 0; i < critters.length; i++) {
       var c = critters[i];
@@ -1163,6 +1182,13 @@
       var top = waterTop + 30, bottom = floor - h;
       var bob = c.kind.octo ? Math.sin(now / 1800 + c.phase) * 22 : Math.sin(now / 1500 + c.phase) * 6;
       var y = top + Math.max(0, bottom - top) * c.depth + bob * scale;
+      var near = c.x + w > avoid.left - 140 && c.x < avoid.right + 140;
+      if (!near || c.side === undefined) { c.side = y + h / 2 < (avoid.top + avoid.bottom) / 2 ? -1 : 1; }
+      if (c.side < 0 && avoid.top - h < top) { c.side = 1; }
+      if (c.side > 0 && avoid.bottom > bottom) { c.side = -1; }
+      if (near) { y = c.side < 0 ? Math.min(y, avoid.top - h) : Math.max(y, avoid.bottom); }
+      c.y = c.y === undefined ? y : c.y + (y - c.y) * Math.min(1, dt * 2.5);
+      y = c.y;
       var tilt = c.kind.octo ? Math.sin(now / 1800 + c.phase) * 6 : Math.sin(now / (c.kind.calm ? 1400 : 900) + c.phase) * (c.kind.calm ? 1.5 : 4);
 
       c.el.classList.toggle("left", c.dir < 0 && !c.kind.octo);
@@ -1178,6 +1204,68 @@
     setAquarium(on);
   })();
   requestAnimationFrame(animateAquarium);
+
+  // Begriffe fliegen einmal pro Minute durchs Bild (nur wenn das Aquarium an ist)
+  var WORDS = ["ITIL", "PRINCE2", "COBIT", "ISO 27001"];
+  var wordIdx = 0;
+
+  function playWord() {
+    if (!aqua.on || document.hidden || document.body.classList.contains("setup")) { return; }
+    var W = window.innerWidth, H = window.innerHeight;
+    var text = WORDS[wordIdx++ % WORDS.length];
+    var word = document.createElement("div");
+    word.className = "fword";
+    word.style.fontSize = Math.round(Math.max(32, Math.min(72, Math.min(W, H) * 0.075))) + "px";
+    var x0 = W * 0.08, y0 = H * 0.13;
+    word.style.transform = "translate(" + x0 + "px," + y0 + "px)";
+    var spans = text.split("").map(function (ch) {
+      var sp = document.createElement("span");
+      sp.textContent = ch === " " ? "\u00a0" : ch;
+      sp.style.opacity = "0";
+      sp.style.transform = "translate(" + rand(-W * 0.4, W * 0.6).toFixed(0) + "px," + rand(-H * 0.15, H * 0.6).toFixed(0) + "px) rotate(" + rand(-90, 90).toFixed(0) + "deg)";
+      word.appendChild(sp);
+      return sp;
+    });
+    aquariumEl.appendChild(word);
+    word.getBoundingClientRect();
+    // 1. Buchstaben fliegen ein und setzen sich zusammen
+    spans.forEach(function (sp, k) {
+      sp.style.transitionDelay = (k * 0.12) + "s";
+      sp.style.opacity = "1";
+      sp.style.transform = "translate(0,0) rotate(0deg)";
+    });
+    // 2. schweben von links oben nach rechts unten
+    setTimeout(function () {
+      // schräg nach rechts unten, aber nur bis knapp über die Uhrzeit (nicht hindurch)
+      var wr = word.getBoundingClientRect(), dr = displayEl.getBoundingClientRect();
+      var x1 = Math.max(x0, W - wr.width - W * 0.08);
+      var y1 = Math.max(y0, dr.top - wr.height - 12);
+      word.style.transform = "translate(" + x1.toFixed(0) + "px," + y1.toFixed(0) + "px) rotate(4deg)";
+    }, 2800);
+    // 3. lösen sich in Blasen auf
+    setTimeout(function () {
+      word.classList.add("gone");
+      var r = word.getBoundingClientRect();
+      for (var i = 0; i < 6; i++) {
+        var b = document.createElement("div");
+        var size = rand(6, 16);
+        b.className = "wbub";
+        b.style.width = b.style.height = size + "px";
+        b.style.left = (r.left + rand(0, r.width)) + "px";
+        b.style.top = (r.top + rand(0, r.height)) + "px";
+        b.style.animationDelay = rand(0, 0.6) + "s";
+        aquariumEl.appendChild(b);
+        setTimeout(function (el) { return function () { el.remove(); }; }(b), 3200);
+      }
+    }, 8800);
+    setTimeout(function () { word.remove(); }, 11000);
+  }
+
+  function scheduleWord() {
+    setTimeout(function () { playWord(); scheduleWord(); }, 60000 - (Date.now() % 60000) + 50);
+  }
+  setTimeout(playWord, 3000);
+  scheduleWord();
 
   buildList();
   render();
