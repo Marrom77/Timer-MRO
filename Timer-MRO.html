@@ -183,7 +183,7 @@
   .readout.below { color: #ffffff; text-shadow: 0 2px 14px rgba(11, 16, 38, 0.45); -webkit-clip-path: inset(calc(100% - var(--level)) 0 0 0); clip-path: inset(calc(100% - var(--level)) 0 0 0); }
   .display {
     font-size: min(17vw, 24vh);
-    font-weight: 200;
+    font-weight: 500;
     line-height: 1;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -191,6 +191,9 @@
     white-space: nowrap;
   }
   .readout.above .display.done { color: #fca5a5; }
+  /* Ziffern zweifarbig: über Wasser sonnengelb, unter Wasser dunkelblau */
+  .readout.above .display { color: #fde047; }
+  .readout.below .display { color: #0b1026; text-shadow: none; }
   .info {
     min-height: 1.4em;
     margin-top: 14px;
