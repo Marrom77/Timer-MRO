@@ -244,6 +244,42 @@
   }
   @-webkit-keyframes sway { from { -webkit-transform: rotate(-7deg); } to { -webkit-transform: rotate(7deg); } }
   @keyframes sway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+  /* Bodenbewohner: Krabbe und Muschel graben im Sand */
+  .dweller { position: absolute; bottom: 2.5%; }
+  .dweller svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .crab { left: 16%; width: clamp(66px, 10vmin, 110px); animation: crabwalk 45s ease-in-out infinite; }
+  @keyframes crabwalk {
+    0%, 8% { transform: translateX(0); }
+    24%, 40% { transform: translateX(16vw); }
+    52%, 64% { transform: translateX(7vw); }
+    80%, 100% { transform: translateX(0); }
+  }
+  .crab .claw, .crab .leg { transform-box: fill-box; }
+  .crab .claw { transform-origin: 50% 100%; animation: dig 1.2s ease-in-out infinite alternate; }
+  .crab .claw.r { animation-delay: -0.6s; }
+  @keyframes dig { from { transform: rotate(-28deg) translateY(-2px); } to { transform: rotate(16deg) translateY(3px); } }
+  .crab .leg { transform-origin: 50% 0; animation: step 0.9s ease-in-out infinite alternate; }
+  .crab .leg:nth-child(even) { animation-delay: -0.45s; }
+  @keyframes step { from { transform: rotate(-10deg); } to { transform: rotate(10deg); } }
+  .clam { left: 70%; width: clamp(52px, 8vmin, 86px); transform-origin: 50% 100%; animation: clamdig 8s ease-in-out infinite; }
+  @keyframes clamdig {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    10% { transform: translateY(3px) rotate(-6deg); }
+    20% { transform: translateY(5px) rotate(6deg); }
+    30% { transform: translateY(2px) rotate(-3deg); }
+    40%, 90% { transform: translateY(0) rotate(0); }
+  }
+  .clam .lid { transform-box: fill-box; transform-origin: 6% 100%; animation: clamopen 8s ease-in-out infinite; }
+  @keyframes clamopen { 0%, 45% { transform: rotate(0); } 55%, 80% { transform: rotate(-24deg); } 90%, 100% { transform: rotate(0); } }
+  .puff { position: absolute; bottom: 4%; width: 5px; height: 5px; border-radius: 50%; background: #d6b98a; opacity: 0; animation: puff 1.4s ease-out infinite; }
+  .puff:nth-of-type(2) { animation-delay: -0.5s; margin-left: 8px; }
+  .puff:nth-of-type(3) { animation-delay: -0.9s; margin-left: -6px; }
+  @keyframes puff { 0% { transform: translate(0, 0) scale(0.6); opacity: 0.9; } 100% { transform: translate(-10px, -22px) scale(1.3); opacity: 0; } }
+  .crab .puff { left: 6%; }
+  .crab .puff + .puff + .puff { left: 88%; }
+  .clam .puff { left: 50%; animation-duration: 8s; }
+  .clam .puff:nth-of-type(2) { animation-delay: -0.4s; }
+  .clam .puff:nth-of-type(3) { animation-delay: -0.8s; }
   .critter {
     position: absolute;
     left: 0;
@@ -496,6 +532,8 @@
     <div class="weed" style="left:7%;height:10%;animation-delay:-2s;-webkit-animation-delay:-2s"></div>
     <div class="weed" style="left:89%;height:13%;animation-delay:-1s;-webkit-animation-delay:-1s"></div>
     <div class="weed" style="left:91.5%;height:8%;animation-delay:-3s;-webkit-animation-delay:-3s"></div>
+    <div class="dweller crab"><span class="puff"></span><span class="puff"></span><span class="puff"></span><svg viewBox="0 0 100 64"><g><path class="leg" d="M30 44 l-8 14" stroke="#c2410c" stroke-width="3.5" stroke-linecap="round"/><path class="leg" d="M36 44 l-6 14" stroke="#c2410c" stroke-width="3.5" stroke-linecap="round"/><path class="leg" d="M42 44 l-3 14" stroke="#c2410c" stroke-width="3.5" stroke-linecap="round"/><path class="leg" d="M58 44 l3 14" stroke="#c2410c" stroke-width="3.5" stroke-linecap="round"/><path class="leg" d="M64 44 l6 14" stroke="#c2410c" stroke-width="3.5" stroke-linecap="round"/><path class="leg" d="M70 44 l8 14" stroke="#c2410c" stroke-width="3.5" stroke-linecap="round"/></g><g class="claw l"><path d="M28 36 Q16 30 16 20" stroke="#ea580c" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M16 22 Q6 18 9 8 Q16 6 19 12 L15 16 Q21 17 22 21Z" fill="#f97316"/></g><g class="claw r"><path d="M72 36 Q84 30 84 20" stroke="#ea580c" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M84 22 Q94 18 91 8 Q84 6 81 12 L85 16 Q79 17 78 21Z" fill="#f97316"/></g><path d="M44 30 v-12 M56 30 v-12" stroke="#ea580c" stroke-width="3"/><circle cx="44" cy="15" r="5" fill="#fff"/><circle cx="44.6" cy="15.5" r="2.5" fill="#0b1026"/><circle cx="56" cy="15" r="5" fill="#fff"/><circle cx="56.6" cy="15.5" r="2.5" fill="#0b1026"/><ellipse cx="50" cy="40" rx="25" ry="14" fill="#f97316"/><ellipse cx="44" cy="35" rx="8" ry="4" fill="#fff" opacity=".22"/><path d="M44 44 q6 4 12 0" stroke="#9a3412" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg></div>
+    <div class="dweller clam"><span class="puff"></span><span class="puff"></span><span class="puff"></span><svg viewBox="0 0 80 52"><path d="M6 34 Q40 56 74 34Z" fill="#f9a8d4"/><circle cx="40" cy="36" r="5" fill="#fff" opacity=".9"/><g class="lid"><path d="M6 34 Q12 4 40 4 Q68 4 74 34 Q40 40 6 34Z" fill="#f472b6"/><path d="M40 36 L40 6 M40 36 L24 8 M40 36 L56 8 M40 36 L13 18 M40 36 L67 18" stroke="#fbcfe8" stroke-width="2.4" opacity=".7"/></g><circle cx="54" cy="24" r="3.2" fill="#fff"/><circle cx="54.6" cy="24.4" r="1.6" fill="#0b1026"/></svg></div>
   </div>
 
   <div class="readout above">
@@ -1044,7 +1082,7 @@
       kind: kind, el: el,
       x: rand(0, window.innerWidth), dir: Math.random() < 0.5 ? -1 : 1,
       depth: rand(0.05, 0.95), targetDepth: rand(0.05, 0.95),
-      speed: rand(kind.min || 40, kind.max || 110), base: rand(kind.min || 40, kind.max || 110),
+      speed: rand(kind.min || 14, kind.max || 40), base: rand(kind.min || 14, kind.max || 40),
       phase: rand(0, 6.28), nextChange: 0
     });
   }
@@ -1083,21 +1121,21 @@
 
       // ab und zu: neues Tempo, neue Tiefe, manchmal umdrehen
       if (now > c.nextChange) {
-        c.nextChange = now + rand(2500, 7000);
-        c.base = rand(c.kind.min || 35, c.kind.max || 120);
+        c.nextChange = now + rand(5000, 12000);
+        c.base = rand(c.kind.min || 12, c.kind.max || 42);
         c.targetDepth = c.kind.calm ? rand(0.35, 0.75) : rand(0.05, 0.95);
         if (Math.random() < (c.kind.calm ? 0.08 : 0.25)) { c.dir = -c.dir; }
       }
       c.speed += (c.base - c.speed) * Math.min(1, dt * 1.5);
-      c.depth += (c.targetDepth - c.depth) * Math.min(1, dt * 0.4);
+      c.depth += (c.targetDepth - c.depth) * Math.min(1, dt * 0.2);
       c.x += c.speed * scale * tempo * c.dir * dt;
       if (c.x > W - w * 0.3) { c.dir = -1; }
       if (c.x < -w * 0.7) { c.dir = 1; }
 
       var top = waterTop + 30, bottom = floor - h;
-      var bob = c.kind.octo ? Math.sin(now / 1100 + c.phase) * 22 : Math.sin(now / 700 + c.phase) * 6;
+      var bob = c.kind.octo ? Math.sin(now / 1800 + c.phase) * 22 : Math.sin(now / 1500 + c.phase) * 6;
       var y = top + Math.max(0, bottom - top) * c.depth + bob * scale;
-      var tilt = c.kind.octo ? Math.sin(now / 1100 + c.phase) * 6 : Math.sin(now / (c.kind.calm ? 900 : 350) + c.phase) * (c.kind.calm ? 1.5 : 4);
+      var tilt = c.kind.octo ? Math.sin(now / 1800 + c.phase) * 6 : Math.sin(now / (c.kind.calm ? 1400 : 900) + c.phase) * (c.kind.calm ? 1.5 : 4);
 
       c.el.classList.toggle("left", c.dir < 0 && !c.kind.octo);
       c.el.style.opacity = y > waterTop + 6 ? "1" : "0";
