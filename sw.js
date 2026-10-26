@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var CACHE = "timer-mro-v26";
+  var CACHE = "timer-mro-v27";
   var ASSETS = [
     "./",
     "./index.html",

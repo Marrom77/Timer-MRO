@@ -1294,7 +1294,7 @@
   })();
   requestAnimationFrame(animateAquarium);
 
-  // Darstellung umschalten: Wasserstand oder Ring (Wahl wird gemerkt)
+  // Darstellung umschalten: Wasserstand oder Ring
   function setLook(look) {
     var ring = look === "ring";
     document.body.classList.toggle("look-ring", ring);
@@ -1302,14 +1302,10 @@
     btnLook.setAttribute("aria-label", ring ? "Darstellung wechseln: Wasserstand" : "Darstellung wechseln: Ring");
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) { meta.setAttribute("content", ring ? "#0f0b2e" : "#0b1026"); }
-    try { localStorage.setItem("timer-mro-look", ring ? "ring" : "water"); } catch (err) { /* ohne Speicher */ }
   }
   btnLook.addEventListener("click", function () { setLook(isRing() ? "water" : "ring"); });
-  (function () {
-    var look = "water";
-    try { look = localStorage.getItem("timer-mro-look") || "water"; } catch (err) { /* ohne Speicher */ }
-    setLook(look);
-  })();
+  // beim Start immer mit dem Ring beginnen; umschalten geht jederzeit
+  setLook("ring");
 
   buildList();
   render();
