@@ -408,7 +408,7 @@
 
   /* Einstellungsseite */
   .setup-card {
-    width: min(380px, 86vw);
+    width: min(760px, 92vw);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -422,30 +422,56 @@
     text-transform: uppercase;
     color: #7dd3fc;
   }
-  .modes {
+  .panels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    width: 100%;
+  }
+  .panel {
     display: flex;
-    padding: 3px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    padding: 20px 16px 22px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
-  .modes button {
-    min-width: 96px;
-    min-height: 36px;
-    padding: 6px 18px;
+  .panel.active { border-color: rgba(56, 189, 248, 0.55); background: rgba(56, 189, 248, 0.07); }
+  .panel h2 {
+    margin: 0;
     font-size: 14px;
     font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
   }
-  .modes button.active { background: rgba(255, 255, 255, 0.16); color: #ffffff; }
+  .panel.active h2 { color: #ffffff; }
+  /* Schnellwahl Dauer */
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+  .chips button {
+    min-height: 36px;
+    padding: 6px 7px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.85);
+    font-variant-numeric: tabular-nums;
+  }
+  .chips button.active { border-color: rgba(56, 189, 248, 0.8); background: rgba(56, 189, 248, 0.2); color: #ffffff; }
+  .chips button:active { background: rgba(56, 189, 248, 0.3); }
+  @media (max-width: 640px) {
+    .panels { grid-template-columns: minmax(0, 1fr); }
+  }
   .picker {
     position: relative;
     display: flex;
     align-items: center;
-    width: 220px;
+    width: min(220px, 100%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.25);
   }
   .picker input {
@@ -636,21 +662,36 @@
   <div class="setup-card">
     <h1>Timer einstellen</h1>
 
-    <div class="modes" role="group" aria-label="Modus">
-      <button type="button" id="modeDuration" class="active">Dauer</button>
-      <button type="button" id="modeClock">Uhrzeit</button>
+    <div class="panels">
+      <section class="panel" id="panelDuration">
+        <h2>Dauer</h2>
+        <div class="chips" id="chips" role="group" aria-label="Schnellwahl Dauer">
+          <button type="button" data-value="0:10">10 Min</button>
+          <button type="button" data-value="0:15">15 Min</button>
+          <button type="button" data-value="0:30">30 Min</button>
+          <button type="button" data-value="0:45">45 Min</button>
+          <button type="button" data-value="1:00">60 Min</button>
+        </div>
+        <div class="picker" id="picker">
+          <input type="text" id="timeInput" value="1:30" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="H:MM" aria-label="Dauer (H:MM)">
+          <button type="button" class="toggle" id="toggle" aria-label="Vorschläge anzeigen">&#9662;</button>
+          <ul class="list" id="list" role="listbox"></ul>
+        </div>
+        <div class="preview" id="preview"></div>
+        <div class="error" id="error" role="alert"></div>
+        <button type="button" class="apply" id="btnApply">Dauer übernehmen</button>
+      </section>
+
+      <section class="panel" id="panelClock">
+        <h2>Uhrzeit</h2>
+        <div class="picker clock" id="pickerClock">
+          <input type="text" id="clockInput" value="" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="HH:MM" aria-label="Zielzeit (HH:MM)">
+        </div>
+        <div class="preview" id="previewClock"></div>
+        <div class="error" id="errorClock" role="alert"></div>
+        <button type="button" class="apply" id="btnApplyClock">Uhrzeit übernehmen</button>
+      </section>
     </div>
-
-    <div class="picker" id="picker">
-      <input type="text" id="timeInput" value="1:30" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="H:MM" aria-label="Zeit (H:MM)">
-      <button type="button" class="toggle" id="toggle" aria-label="Vorschläge anzeigen">&#9662;</button>
-      <ul class="list" id="list" role="listbox"></ul>
-    </div>
-
-    <div class="preview" id="preview"></div>
-    <div class="error" id="error" role="alert"></div>
-
-    <button type="button" class="apply" id="btnApply">Übernehmen</button>
   </div>
 </div>
 
@@ -679,8 +720,13 @@
   var btnSetup = document.getElementById("btnSetup");
   var btnBack = document.getElementById("btnBack");
   var btnApply = document.getElementById("btnApply");
-  var modeDurationEl = document.getElementById("modeDuration");
-  var modeClockEl = document.getElementById("modeClock");
+  var clockInputEl = document.getElementById("clockInput");
+  var previewClockEl = document.getElementById("previewClock");
+  var errorClockEl = document.getElementById("errorClock");
+  var btnApplyClock = document.getElementById("btnApplyClock");
+  var panelDurationEl = document.getElementById("panelDuration");
+  var panelClockEl = document.getElementById("panelClock");
+  var chipsEl = document.getElementById("chips");
   var infoEl = document.getElementById("info");
   var presetEl = document.getElementById("preset");
   var display2El = document.getElementById("display2");
@@ -706,7 +752,6 @@
     clock: null,
     values: { duration: DEFAULT_TIME, clock: "" },
     targetText: "",
-    draftMode: "duration",
     adjusted: false,
     drag: null
   };
@@ -909,40 +954,33 @@
     return pad(d.getHours()) + ":00";
   }
 
-  function showError(show) {
-    errorEl.textContent = show ? (state.draftMode === "clock" ? ERROR_TEXT_CLOCK : ERROR_TEXT) : "";
-    inputEl.classList.toggle("invalid", !!show);
+  // Dauer und Uhrzeit stehen nebeneinander; jede Seite wird mit ihrem eigenen Knopf übernommen
+  function showError(kind, show) {
+    var clock = kind === "clock";
+    (clock ? errorClockEl : errorEl).textContent = show ? (clock ? ERROR_TEXT_CLOCK : ERROR_TEXT) : "";
+    (clock ? clockInputEl : inputEl).classList.toggle("invalid", !!show);
   }
 
   function updatePreview() {
-    var text = "";
-    if (state.draftMode === "clock") {
-      var clock = parseClock(inputEl.value);
-      if (clock) { text = targetText(clock, nextTarget(clock)); }
-    } else {
-      var ms = parseTime(inputEl.value);
-      if (ms) { text = "läuft bis ca. " + clockOf(Date.now() + ms) + " Uhr"; }
+    var ms = parseTime(inputEl.value);
+    previewEl.textContent = ms ? "läuft bis ca. " + clockOf(Date.now() + ms) + " Uhr" : "";
+    var clock = parseClock(clockInputEl.value);
+    previewClockEl.textContent = clock ? targetText(clock, nextTarget(clock)) : "";
+    var chips = chipsEl.children;
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].classList.toggle("active", parseTime(chips[i].getAttribute("data-value")) === ms);
     }
-    previewEl.textContent = text;
-  }
-
-  // Modus auf der Einstellungsseite nur vormerken; wirksam erst mit „Übernehmen“
-  function setDraftMode(mode) {
-    closeList();
-    showError(false);
-    state.draftMode = mode;
-    var clockMode = mode === "clock";
-    modeDurationEl.classList.toggle("active", !clockMode);
-    modeClockEl.classList.toggle("active", clockMode);
-    pickerEl.classList.toggle("clock", clockMode);
-    inputEl.placeholder = clockMode ? "HH:MM" : "H:MM";
-    inputEl.setAttribute("aria-label", clockMode ? "Zielzeit (HH:MM)" : "Zeit (H:MM)");
-    inputEl.value = state.values[mode] || (clockMode ? defaultClock() : DEFAULT_TIME);
-    updatePreview();
   }
 
   function openSetup() {
-    setDraftMode(state.mode);
+    closeList();
+    showError("duration", false);
+    showError("clock", false);
+    inputEl.value = state.values.duration || DEFAULT_TIME;
+    clockInputEl.value = state.values.clock || defaultClock();
+    panelDurationEl.classList.toggle("active", state.mode !== "clock");
+    panelClockEl.classList.toggle("active", state.mode === "clock");
+    updatePreview();
     document.body.classList.add("setup");
     window.scrollTo(0, 0);
   }
@@ -950,32 +988,36 @@
   function closeSetup() {
     closeList();
     inputEl.blur();
-    showError(false);
+    clockInputEl.blur();
+    showError("duration", false);
+    showError("clock", false);
     document.body.classList.remove("setup");
     window.scrollTo(0, 0);
   }
 
   // Übernehmen: Timer stoppen und auf den neuen Wert setzen
-  function apply() {
+  function apply(kind) {
     closeList();
-    var ms;
-    if (state.draftMode === "clock") {
-      var clock = parseClock(inputEl.value);
+    var ms, value;
+    if (kind === "clock") {
+      value = clockInputEl.value.trim();
+      var clock = parseClock(value);
       if (clock === null) {
-        showError(true);
+        showError("clock", true);
         return;
       }
       setTarget(clock);
       ms = state.target - Date.now();
     } else {
-      ms = parseTime(inputEl.value);
+      value = inputEl.value.trim();
+      ms = parseTime(value);
       if (ms === null) {
-        showError(true);
+        showError("duration", true);
         return;
       }
     }
-    state.mode = state.draftMode;
-    state.values[state.mode] = inputEl.value.trim();
+    state.mode = kind;
+    state.values[kind] = value;
     clearTick();
     state.running = false;
     state.alertPending = false;
@@ -986,11 +1028,18 @@
     closeSetup();
   }
 
-  modeDurationEl.addEventListener("click", function () { setDraftMode("duration"); });
-  modeClockEl.addEventListener("click", function () { setDraftMode("clock"); });
+  // Schnellwahl: Dauer sofort übernehmen
+  chipsEl.addEventListener("click", function (e) {
+    var t = e.target.closest ? e.target.closest("button") : null;
+    if (!t) { return; }
+    inputEl.value = t.getAttribute("data-value");
+    apply("duration");
+  });
+
   btnSetup.addEventListener("click", openSetup);
   btnBack.addEventListener("click", closeSetup);
-  btnApply.addEventListener("click", apply);
+  btnApply.addEventListener("click", function () { apply("duration"); });
+  btnApplyClock.addEventListener("click", function () { apply("clock"); });
 
   // Dropdown
   function buildList() {
@@ -1036,7 +1085,7 @@
     if (!t || t === listEl) { return; }
     inputEl.value = t.getAttribute("data-value");
     closeList();
-    showError(false);
+    showError("duration", false);
     updatePreview();
   });
 
@@ -1048,17 +1097,27 @@
 
   // Freie Eingabe
   inputEl.addEventListener("input", function () {
-    var ok = state.draftMode === "clock" ? parseClock(inputEl.value) !== null : parseTime(inputEl.value) !== null;
-    if (errorEl.textContent && ok) { showError(false); }
+    if (errorEl.textContent && parseTime(inputEl.value) !== null) { showError("duration", false); }
     updatePreview();
   });
   inputEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
       inputEl.blur();
-      apply();
+      apply("duration");
     } else if (e.key === "Escape") {
       closeList();
+    }
+  });
+  clockInputEl.addEventListener("input", function () {
+    if (errorClockEl.textContent && parseClock(clockInputEl.value) !== null) { showError("clock", false); }
+    updatePreview();
+  });
+  clockInputEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      clockInputEl.blur();
+      apply("clock");
     }
   });
 
