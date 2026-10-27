@@ -850,8 +850,8 @@
     ringEl.classList.toggle("adjustable", adjustable);
     ringKnobEl.classList.toggle("hidden", !adjustable || frac <= 0);
     setText(infoEl, info2El, infoText());
-    // im Ring zeigt die Zeile „Uhrzeit“ die aktuelle echte Uhrzeit (das Ziel steht in der Zeile darüber)
-    var presetValue = state.mode === "clock" && isRing() ? clockOf(Date.now()) : state.values[state.mode];
+    // im Modus Uhrzeit zeigt die Zeile „Uhrzeit“ die aktuelle echte Uhrzeit (das Ziel steht in der Zeile darüber)
+    var presetValue = state.mode === "clock" ? clockOf(Date.now()) : state.values[state.mode];
     setText(presetEl, preset2El, (state.mode === "clock" ? "Uhrzeit " : "Dauer ") + presetValue);
     btnStop.disabled = !state.running;
     btnResume.disabled = !canResume();
@@ -1368,7 +1368,7 @@
   btnLook.addEventListener("click", function () { setLook(isRing() ? "water" : "ring"); });
   // beim Start immer mit dem Ring beginnen; umschalten geht jederzeit
   setLook("ring");
-  // aktuelle Uhrzeit im Ring auch bei stehendem Timer weiterzählen
+  // aktuelle Uhrzeit auch bei stehendem Timer weiterzählen
   setInterval(function () { if (!state.running && !document.hidden) { render(); } }, 1000);
 
   buildList();
