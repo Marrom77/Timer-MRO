@@ -850,7 +850,9 @@
     ringEl.classList.toggle("adjustable", adjustable);
     ringKnobEl.classList.toggle("hidden", !adjustable || frac <= 0);
     setText(infoEl, info2El, infoText());
-    setText(presetEl, preset2El, (state.mode === "clock" ? "Uhrzeit " : "Dauer ") + state.values[state.mode]);
+    // im Ring zeigt die Zeile „Uhrzeit“ die aktuelle echte Uhrzeit (das Ziel steht in der Zeile darüber)
+    var presetValue = state.mode === "clock" && isRing() ? clockOf(Date.now()) : state.values[state.mode];
+    setText(presetEl, preset2El, (state.mode === "clock" ? "Uhrzeit " : "Dauer ") + presetValue);
     btnStop.disabled = !state.running;
     btnResume.disabled = !canResume();
     btnStart.classList.toggle("next", !state.running && !canResume());
@@ -1357,6 +1359,7 @@
   function setLook(look) {
     var ring = look === "ring";
     document.body.classList.toggle("look-ring", ring);
+    render();
     btnLook.innerHTML = ring ? "&#127754;" : "&#9711;&#xFE0E;";
     btnLook.setAttribute("aria-label", ring ? "Darstellung wechseln: Wasserstand" : "Darstellung wechseln: Ring");
     var meta = document.querySelector('meta[name="theme-color"]');
@@ -1365,6 +1368,8 @@
   btnLook.addEventListener("click", function () { setLook(isRing() ? "water" : "ring"); });
   // beim Start immer mit dem Ring beginnen; umschalten geht jederzeit
   setLook("ring");
+  // aktuelle Uhrzeit im Ring auch bei stehendem Timer weiterzählen
+  setInterval(function () { if (!state.running && !document.hidden) { render(); } }, 1000);
 
   buildList();
   render();
