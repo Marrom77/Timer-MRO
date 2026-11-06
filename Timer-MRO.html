@@ -746,7 +746,6 @@
     endTime: 0,
     running: false,
     intervalId: null,
-    alertPending: false,
     mode: "duration",
     target: 0,
     clock: null,
@@ -881,28 +880,16 @@
     clearTick();
     state.running = false;
     state.remainingMs = 0;
+    // kein Hinweisfenster: das Ende zeigt die Anzeige („Zeit abgelaufen“, rote Ziffern)
     render();
-    state.alertPending = true;
-    // iOS unterdrückt alert() in Hintergrund-Tabs: erst anzeigen, wenn sichtbar
-    if (!document.hidden) { showAlert(); }
-  }
-
-  function showAlert() {
-    if (!state.alertPending) { return; }
-    state.alertPending = false;
-    setTimeout(function () {
-      alert("Zeit abgelaufen!");
-    }, 30);
   }
 
   function wake() {
     tick();
-    if (!document.hidden) { showAlert(); }
   }
 
   function run() {
     clearTick();
-    state.alertPending = false;
     state.running = true;
     // Uhrzeit-Modus: immer gegen die feste Zielzeit zählen
     state.endTime = state.mode === "clock" ? state.target : Date.now() + state.remainingMs;
@@ -943,7 +930,6 @@
 
   function reset() {
     clearTick();
-    state.alertPending = false;
     state.running = false;
     state.adjusted = false;
     rearm();
@@ -1022,7 +1008,6 @@
     state.values[kind] = value;
     clearTick();
     state.running = false;
-    state.alertPending = false;
     state.baseMs = ms;
     state.remainingMs = ms;
     state.adjusted = false;
@@ -1181,7 +1166,6 @@
     var wasRunning = state.running;
     if (wasRunning) { stop(); }
     state.drag = { id: e.pointerId, wasRunning: wasRunning, frac: ringStart };
-    state.alertPending = false;
     timerViewEl.classList.add("dragging");
     ringEl.classList.toggle("dragging", ringStart !== null);
     if (timerViewEl.setPointerCapture) { timerViewEl.setPointerCapture(e.pointerId); }
