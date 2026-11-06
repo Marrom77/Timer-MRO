@@ -1006,6 +1006,7 @@
     }
     state.mode = kind;
     state.values[kind] = value;
+    saveSettings();
     clearTick();
     state.running = false;
     state.baseMs = ms;
@@ -1355,6 +1356,31 @@
   // aktuelle Uhrzeit auch bei stehendem Timer weiterzählen
   setInterval(function () { if (!state.running && !document.hidden) { render(); } }, 1000);
 
+  // zuletzt gewählte Vorgabe (Modus, Dauer, Uhrzeit) über einen Neustart der App hinweg merken
+  function saveSettings() {
+    try {
+      localStorage.setItem("timer-mro-settings", JSON.stringify({ mode: state.mode, duration: state.values.duration, clock: state.values.clock }));
+    } catch (err) { /* ohne Speicher */ }
+  }
+
+  function loadSettings() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem("timer-mro-settings") || "null"); } catch (err) { saved = null; }
+    if (!saved) { return; }
+    if (typeof saved.duration === "string" && parseTime(saved.duration) !== null) { state.values.duration = saved.duration; }
+    if (typeof saved.clock === "string" && parseClock(saved.clock) !== null) { state.values.clock = saved.clock; }
+    if (saved.mode === "clock" && state.values.clock) {
+      state.mode = "clock";
+      setTarget(parseClock(state.values.clock));
+      state.baseMs = state.target - Date.now();
+    } else {
+      state.mode = "duration";
+      state.baseMs = parseTime(state.values.duration);
+    }
+    state.remainingMs = state.baseMs;
+  }
+
+  loadSettings();
   buildList();
   render();
 
